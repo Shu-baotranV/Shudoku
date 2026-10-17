@@ -153,4 +153,4 @@ renderBoard();
 </html>
 """
 
-components.html(game_html, height=380)s
+components.html(game_html, height=380)
