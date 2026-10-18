@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Pipe Puzzle Realistic", layout="centered")
+st.set_page_config(page_title="Pipe Puzzle 5 Levels", layout="centered")
 
 st.markdown("""
 <style>
@@ -18,7 +18,7 @@ game_html = """
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pipe Puzzle Realistic</title>
+<title>Pipe Puzzle Deluxe</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
   body {
@@ -40,28 +40,28 @@ game_html = """
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 380px;
   }
   .header-info {
     width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
-    font-size: 15px;
+    margin-bottom: 10px;
+    font-size: 14px;
     font-weight: bold;
     color: #cfd8dc;
   }
-  .steps-badge {
+  .badge {
     background: #263238;
-    padding: 6px 14px;
-    border-radius: 20px;
+    padding: 5px 10px;
+    border-radius: 15px;
     border: 1px solid #455a64;
     color: #80d8ff;
+    font-size: 12px;
   }
   .game-board {
     display: grid;
-    grid-template-columns: repeat(4, 80px);
-    grid-template-rows: repeat(4, 80px);
     gap: 4px;
     background: #0d0d0d;
     padding: 8px;
@@ -70,8 +70,6 @@ game_html = """
     box-shadow: inset 0 0 10px #000;
   }
   canvas.tile-canvas {
-    width: 80px;
-    height: 80px;
     background: #222;
     border-radius: 6px;
     cursor: pointer;
@@ -81,35 +79,36 @@ game_html = """
   canvas.tile-canvas:hover {
     filter: brightness(1.2);
   }
-  canvas.tile-canvas:active {
-    transform: scale(0.94);
-  }
   .controls {
-    margin-top: 15px;
+    margin-top: 12px;
     display: flex;
-    gap: 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
   }
   button {
     background: #00838f;
     color: #fff;
     border: none;
-    padding: 10px 22px;
-    font-size: 14px;
+    padding: 8px 14px;
+    font-size: 13px;
     font-weight: bold;
     border-radius: 6px;
     cursor: pointer;
-    box-shadow: 0 4px #004d40;
+    box-shadow: 0 3px #004d40;
     transition: 0.1s;
   }
   button:active {
-    transform: translateY(3px);
+    transform: translateY(2px);
     box-shadow: 0 1px #004d40;
   }
+  button.hint-btn { background: #f57c00; box-shadow: 0 3px #e65100; }
+  button.next-btn { background: #2e7d32; box-shadow: 0 3px #1b5e20; }
   .status-msg {
-    margin-top: 12px;
-    font-size: 15px;
+    margin-top: 10px;
+    font-size: 14px;
     font-weight: bold;
-    height: 24px;
+    height: 22px;
     text-align: center;
   }
 </style>
@@ -118,57 +117,230 @@ game_html = """
 
 <div class="game-wrapper">
   <div class="header-info">
-    <span>🚰 NỐI ỐNG NƯỚC THỰC TẾ</span>
-    <div class="steps-badge" id="stepsText">Số bước: 12</div>
+    <span id="levelTitle">MÀN 1 / 5</span>
+    <div class="badge" id="stepsText">Lượt: Không giới hạn</div>
   </div>
 
   <div class="game-board" id="board"></div>
 
-  <div class="status-msg" id="statusText">Bấm vào ống để xoay đúng đường dẫn!</div>
+  <div class="status-msg" id="statusText">Xoay ống để kết nối nguồn nước!</div>
 
   <div class="controls">
-    <button onclick="checkWin()">Mở van nước</button>
-    <button onclick="resetGame()" style="background: #e65100; box-shadow: 0 4px #bf360c;">Chơi lại</button>
+    <button onclick="useHint()" class="hint-btn">💡 Gợi ý</button>
+    <button onclick="checkWin()">Kiểm tra</button>
+    <button onclick="resetLevel()" style="background: #e65100; box-shadow: 0 3px #bf360c;">Chơi lại</button>
+    <button onclick="nextLevel()" class="next-btn" id="nextBtn" style="display:none;">Màn tiếp ➡</button>
   </div>
 </div>
 
 <script>
-let stepsLeft = 12;
+// Quản lý Âm thanh Web Audio API
+let audioCtx = null;
+let bgMusicInterval = null;
 
-// Lưới 4x4: type = source, target, straight, corner
-let grid = [
-  {type: 'source', rot: 0, connected: true}, {type: 'straight', rot: 1, connected: false}, {type: 'corner', rot: 2, connected: false}, {type: 'straight', rot: 0, connected: false},
-  {type: 'corner', rot: 1, connected: false}, {type: 'corner', rot: 3, connected: false}, {type: 'straight', rot: 0, connected: false}, {type: 'corner', rot: 0, connected: false},
-  {type: 'straight', rot: 0, connected: false}, {type: 'corner', rot: 2, connected: false}, {type: 'straight', rot: 1, connected: false}, {type: 'corner', rot: 3, connected: false},
-  {type: 'corner', rot: 0, connected: false}, {type: 'straight', rot: 1, connected: false}, {type: 'corner', rot: 2, connected: false}, {type: 'target', rot: 0, connected: false}
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+
+// Tiếng xoay ống (Click lạch cạch)
+function playRotateSound() {
+  initAudio();
+  try {
+    let osc = audioCtx.createOscillator();
+    let gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(320, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.04);
+    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.04);
+  } catch(e) {}
+}
+
+// Tiếng chiến thắng (Hoan hô - chuông thánh thoát đi lên)
+function playWinSound() {
+  initAudio();
+  const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+  notes.forEach((freq, index) => {
+    setTimeout(() => {
+      try {
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+      } catch(e){}
+    }, index * 120);
+  });
+}
+
+// Tiếng thua cuộc (Ỉu xìu - âm trầm đi xuống)
+function playLoseSound() {
+  initAudio();
+  const notes = [300, 260, 220, 180];
+  notes.forEach((freq, index) => {
+    setTimeout(() => {
+      try {
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.25);
+      } catch(e){}
+    }, index * 150);
+  });
+}
+
+// Dữ liệu 5 màn chơi
+// mỗi ô: { type: 'source'|'target'|'straight'|'corner', rot: hiện tại, correctRot: góc thắng, locked: true/false }
+const levelsData = [
+  // Màn 1: 3x3, Không giới hạn
+  {
+    size: 3,
+    maxSteps: Infinity,
+    grid: [
+      {type: 'source', rot: 0, correctRot: 0}, {type: 'straight', rot: 1, correctRot: 0}, {type: 'corner', rot: 2, correctRot: 1},
+      {type: 'corner', rot: 0, correctRot: 3}, {type: 'straight', rot: 2, correctRot: 1}, {type: 'corner', rot: 1, correctRot: 0},
+      {type: 'straight', rot: 0, correctRot: 0}, {type: 'corner', rot: 2, correctRot: 2}, {type: 'target', rot: 0, correctRot: 0}
+    ]
+  },
+  // Màn 2: 3x3, Không giới hạn
+  {
+    size: 3,
+    maxSteps: Infinity,
+    grid: [
+      {type: 'source', rot: 0, correctRot: 0}, {type: 'corner', rot: 1, correctRot: 2}, {type: 'straight', rot: 0, correctRot: 1},
+      {type: 'straight', rot: 2, correctRot: 0}, {type: 'corner', rot: 3, correctRot: 1}, {type: 'corner', rot: 0, correctRot: 3},
+      {type: 'corner', rot: 2, correctRot: 1}, {type: 'straight', rot: 1, correctRot: 0}, {type: 'target', rot: 0, correctRot: 0}
+    ]
+  },
+  // Màn 3: 4x4, Giới hạn 15 bước
+  {
+    size: 4,
+    maxSteps: 15,
+    grid: [
+      {type: 'source', rot: 0, correctRot: 0}, {type: 'straight', rot: 2, correctRot: 1}, {type: 'corner', rot: 1, correctRot: 2}, {type: 'straight', rot: 0, correctRot: 0},
+      {type: 'corner', rot: 3, correctRot: 0}, {type: 'straight', rot: 1, correctRot: 1}, {type: 'corner', rot: 2, correctRot: 3}, {type: 'corner', rot: 0, correctRot: 1},
+      {type: 'straight', rot: 1, correctRot: 0}, {type: 'corner', rot: 0, correctRot: 2}, {type: 'straight', rot: 2, correctRot: 1}, {type: 'corner', rot: 3, correctRot: 0},
+      {type: 'corner', rot: 1, correctRot: 2}, {type: 'straight', rot: 0, correctRot: 0}, {type: 'corner', rot: 2, correctRot: 1}, {type: 'target', rot: 0, correctRot: 0}
+    ]
+  },
+  // Màn 4: 4x4, Giới hạn 12 bước
+  {
+    size: 4,
+    maxSteps: 12,
+    grid: [
+      {type: 'source', rot: 0, correctRot: 0}, {type: 'corner', rot: 2, correctRot: 1}, {type: 'straight', rot: 1, correctRot: 0}, {type: 'corner', rot: 0, correctRot: 2},
+      {type: 'straight', rot: 3, correctRot: 1}, {type: 'corner', rot: 1, correctRot: 3}, {type: 'corner', rot: 2, correctRot: 0}, {type: 'straight', rot: 0, correctRot: 1},
+      {type: 'corner', rot: 0, correctRot: 2}, {type: 'straight', rot: 1, correctRot: 0}, {type: 'corner', rot: 3, correctRot: 1}, {type: 'corner', rot: 1, correctRot: 3},
+      {type: 'straight', rot: 2, correctRot: 0}, {type: 'corner', rot: 0, correctRot: 1}, {type: 'straight', rot: 1, correctRot: 0}, {type: 'target', rot: 0, correctRot: 0}
+    ]
+  },
+  // Màn 5: 4x4, Giới hạn 10 bước (Khó nhất)
+  {
+    size: 4,
+    maxSteps: 10,
+    grid: [
+      {type: 'source', rot: 0, correctRot: 0}, {type: 'corner', rot: 3, correctRot: 2}, {type: 'corner', rot: 1, correctRot: 0}, {type: 'straight', rot: 2, correctRot: 1},
+      {type: 'straight', rot: 0, correctRot: 1}, {type: 'corner', rot: 2, correctRot: 3}, {type: 'straight', rot: 1, correctRot: 0}, {type: 'corner', rot: 0, correctRot: 2},
+      {type: 'corner', rot: 1, correctRot: 0}, {type: 'straight', rot: 3, correctRot: 1}, {type: 'corner', rot: 2, correctRot: 1}, {type: 'straight', rot: 0, correctRot: 0},
+      {type: 'straight', rot: 2, correctRot: 1}, {type: 'corner', rot: 0, correctRot: 3}, {type: 'corner', rot: 1, correctRot: 2}, {type: 'target', rot: 0, correctRot: 0}
+    ]
+  }
 ];
 
-// Hàm vẽ đường ống 3D kim loại lên Canvas
-function drawPipeOnCanvas(canvas, type, rot, isConnected) {
+let currentLevel = 0;
+let stepsLeft = 0;
+let isGameOver = false;
+let isWon = false;
+
+function loadLevel(lvlIdx) {
+  currentLevel = lvlIdx;
+  let lvl = levelsData[currentLevel];
+  stepsLeft = lvl.maxSteps;
+  isGameOver = false;
+  isWon = false;
+  
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('levelTitle').innerText = `MÀN ${currentLevel + 1} / 5`;
+  document.getElementById('statusText').style.color = '#fff';
+  document.getElementById('statusText').innerText = 'Xoay ống để kết nối nguồn nước!';
+  
+  if(stepsLeft === Infinity) {
+    document.getElementById('stepsText').innerText = 'Lượt: Không giới hạn';
+  } else {
+    document.getElementById('stepsText').innerText = `Lượt còn lại: ${stepsLeft}`;
+  }
+
+  const board = document.getElementById('board');
+  board.style.gridTemplateColumns = `repeat(${lvl.size}, ${lvl.size === 3 ? 90 : 75}px)`;
+  board.style.gridTemplateRows = `repeat(${lvl.size}, ${lvl.size === 3 ? 90 : 75}px)`;
+  
+  renderBoard();
+}
+
+function renderBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  let lvl = levelsData[currentLevel];
+  let tileSize = lvl.size === 3 ? 90 : 75;
+
+  lvl.grid.forEach((cell, index) => {
+    const canvas = document.createElement('canvas');
+    canvas.className = 'tile-canvas';
+    canvas.width = tileSize;
+    canvas.height = tileSize;
+    
+    drawPipe(canvas, cell.type, cell.rot, isWon);
+
+    canvas.onclick = () => rotateTile(index);
+    board.appendChild(canvas);
+  });
+}
+
+function drawPipe(canvas, type, rot, connected) {
   const ctx = canvas.getContext('2d');
   const w = canvas.width;
-  const h = canvas.height;
   const center = w / 2;
-  const pipeR = 14; // Bán kính ống nước
+  const pipeR = lvlSizePipeR();
 
-  ctx.clearRect(0, 0, w, h);
+  function lvlSizePipeR() { return canvas.width === 90 ? 16 : 14; }
 
-  // Background ô đất gạch
+  ctx.clearRect(0, 0, w, w);
+
+  // Nền ô
   ctx.fillStyle = '#262626';
-  ctx.fillRect(0, 0, w, h);
+  ctx.fillRect(0, 0, w, w);
   ctx.strokeStyle = '#1a1a1a';
   ctx.lineWidth = 2;
-  ctx.strokeRect(0, 0, w, h);
+  ctx.strokeRect(0, 0, w, w);
 
   ctx.save();
   ctx.translate(center, center);
   ctx.rotate(rot * Math.PI / 2);
   ctx.translate(-center, -center);
 
-  // Tạo màu kim loại đúc (Metallic Gradient)
-  function createPipeGradient(x1, y1, x2, y2) {
-    let grad = ctx.createLinearGradient(x1, y1, x2, y2);
-    if(isConnected) {
+  function getGrad() {
+    let grad = ctx.createLinearGradient(0, center - pipeR, 0, center + pipeR);
+    if(connected) {
       grad.addColorStop(0, '#1b5e20');
       grad.addColorStop(0.3, '#66bb6a');
       grad.addColorStop(0.7, '#81c784');
@@ -182,135 +354,139 @@ function drawPipeOnCanvas(canvas, type, rot, isConnected) {
     return grad;
   }
 
-  // Vẽ các loại ống cụ thể
   if (type === 'straight') {
-    // Ống thẳng từ trái qua phải
-    ctx.fillStyle = createPipeGradient(0, center - pipeR, 0, center + pipeR);
+    ctx.fillStyle = getGrad();
     ctx.fillRect(0, center - pipeR, w, pipeR * 2);
-
-    // Đai đinh tán hai bên
-    ctx.fillStyle = isConnected ? '#4caf50' : '#78909c';
+    ctx.fillStyle = connected ? '#4caf50' : '#78909c';
     ctx.fillRect(8, center - pipeR - 3, 6, pipeR * 2 + 6);
     ctx.fillRect(w - 14, center - pipeR - 3, 6, pipeR * 2 + 6);
   } 
   else if (type === 'corner') {
-    // Ống cong bo góc L (Từ trái xuống dưới)
     ctx.beginPath();
-    ctx.arc(0, h, h - center + pipeR, -Math.PI/2, 0);
-    ctx.arc(0, h, h - center - pipeR, 0, -Math.PI/2, true);
+    ctx.arc(0, w, w - center + pipeR, -Math.PI/2, 0);
+    ctx.arc(0, w, w - center - pipeR, 0, -Math.PI/2, true);
     ctx.closePath();
-    ctx.fillStyle = createPipeGradient(0, center - pipeR, center + pipeR, h);
+    ctx.fillStyle = getGrad();
     ctx.fill();
-
-    // Gờ nối đai
-    ctx.fillStyle = isConnected ? '#4caf50' : '#78909c';
+    ctx.fillStyle = connected ? '#4caf50' : '#78909c';
     ctx.fillRect(0, center - pipeR - 3, 6, pipeR * 2 + 6);
-    ctx.fillRect(center - pipeR - 3, h - 6, pipeR * 2 + 6, 6);
+    ctx.fillRect(center - pipeR - 3, w - 6, pipeR * 2 + 6, 6);
   } 
   else if (type === 'source') {
-    // Ô Nguồn nước kèm bồn/van dẫn
-    ctx.fillStyle = createPipeGradient(0, center - pipeR, w, center + pipeR);
+    ctx.fillStyle = getGrad();
     ctx.fillRect(0, center - pipeR, center, pipeR * 2);
-
     ctx.fillStyle = '#2e7d32';
-    ctx.beginPath();
-    ctx.arc(center, center, 22, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#a5d6a7';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    ctx.fillStyle = '#fff';
-    ctx.font = '20px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('💧', center, center + 7);
+    ctx.beginPath(); ctx.arc(center, center, 20, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#a5d6a7'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = '16px Arial'; ctx.textAlign = 'center';
+    ctx.fillText('💧', center, center + 6);
   } 
   else if (type === 'target') {
-    // Ô Đích đến có van xả đỏ
-    ctx.fillStyle = createPipeGradient(0, center - pipeR, center, center + pipeR);
+    ctx.fillStyle = getGrad();
     ctx.fillRect(0, center - pipeR, center, pipeR * 2);
-
     ctx.fillStyle = '#c62828';
-    ctx.beginPath();
-    ctx.arc(center, center, 20, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#ef9a9a';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    ctx.fillStyle = '#fff';
-    ctx.font = '16px Arial';
-    ctx.textAlign = 'center';
+    ctx.beginPath(); ctx.arc(center, center, 18, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#ef9a9a'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = '14px Arial'; ctx.textAlign = 'center';
     ctx.fillText('⚙️', center, center + 5);
   }
 
   ctx.restore();
 }
 
-function renderBoard() {
-  const boardEl = document.getElementById('board');
-  boardEl.innerHTML = '';
+function rotateTile(index) {
+  if (isGameOver || isWon) return;
+  let lvl = levelsData[currentLevel];
+  let cell = lvl.grid[index];
 
-  grid.forEach((cell, index) => {
-    const canvas = document.createElement('canvas');
-    canvas.className = 'tile-canvas';
-    canvas.width = 80;
-    canvas.height = 80;
-    
-    drawPipeOnCanvas(canvas, cell.type, cell.rot, cell.connected);
+  if (cell.type !== 'source' && cell.type !== 'target') {
+    cell.rot = (cell.rot + 1) % 4;
+    playRotateSound();
 
-    canvas.onclick = () => rotateTile(index);
-    boardEl.appendChild(canvas);
-  });
-
-  document.getElementById('stepsText').innerText = `Số bước: ${stepsLeft}`;
+    if (lvl.maxSteps !== Infinity) {
+      stepsLeft--;
+      document.getElementById('stepsText').innerText = `Lượt còn lại: ${stepsLeft}`;
+      if (stepsLeft <= 0) {
+        isGameOver = true;
+        playLoseSound();
+        document.getElementById('statusText').style.color = '#ef5350';
+        document.getElementById('statusText').innerText = '❌ Hết lượt xoay! Bạn đã thua cuộc.';
+        return;
+      }
+    }
+    renderBoard();
+  }
 }
 
-function rotateTile(index) {
-  if (grid[index].type !== 'source' && grid[index].type !== 'target' && stepsLeft > 0) {
-    grid[index].rot = (grid[index].rot + 1) % 4;
-    stepsLeft--;
-    renderBoard();
-    if(stepsLeft <= 0) {
-      document.getElementById('statusText').style.color = '#ef5350';
-      document.getElementById('statusText').innerText = '⚠️ Hết số bước! Bấm Chơi lại để làm lại.';
+// Tính năng Gợi ý (Hint): Tự động xoay một ô chưa đúng về đúng hướng
+function useHint() {
+  if (isGameOver || isWon) return;
+  let lvl = levelsData[currentLevel];
+  let wrongCells = [];
+  
+  lvl.grid.forEach((cell, idx) => {
+    if (cell.type !== 'source' && cell.type !== 'target' && cell.rot !== cell.correctRot) {
+      wrongCells.push(idx);
     }
+  });
+
+  if (wrongCells.length > 0) {
+    let randIdx = wrongCells[Math.floor(Math.random() * wrongCells.length)];
+    lvl.grid[randIdx].rot = lvl.grid[randIdx].correctRot;
+    playRotateSound();
+    renderBoard();
+    document.getElementById('statusText').style.color = '#00bcd4';
+    document.getElementById('statusText').innerText = '💡 Gợi ý: Đã chỉnh 1 đoạn ống đúng vị trí!';
+  } else {
+    document.getElementById('statusText').innerText = '✨ Tất cả các ống đã đúng vị trí rồi!';
   }
 }
 
 function checkWin() {
-  const statusText = document.getElementById('statusText');
-  let win = grid[1].rot === 0 && grid[5].rot === 2; // Ví dụ điều kiện ghép nối thành công
+  if (isGameOver || isWon) return;
+  let lvl = levelsData[currentLevel];
+  
+  let win = true;
+  lvl.grid.forEach(cell => {
+    if (cell.type !== 'source' && cell.type !== 'target') {
+      if (cell.rot !== cell.correctRot) win = false;
+    }
+  });
 
   if (win) {
-    statusText.style.color = '#66bb6a';
-    statusText.innerText = '🎉 Tuyệt vời! Nước đã chảy qua toàn bộ đường ống!';
-    grid.forEach(c => c.connected = true);
+    isWon = true;
+    playWinSound();
+    document.getElementById('statusText').style.color = '#66bb6a';
+    document.getElementById('statusText').innerText = '🎉 Hoan hô! Bạn đã dẫn nước thành công!';
     renderBoard();
+    
+    if (currentLevel < levelsData.length - 1) {
+      document.getElementById('nextBtn').style.display = 'inline-block';
+    } else {
+      document.getElementById('statusText').innerText = '🏆 Chúc mừng bạn đã phá đảo toàn bộ 5 màn!';
+    }
   } else {
-    statusText.style.color = '#ffa726';
-    statusText.innerText = '❌ Đường ống chưa liền mạch, nước bị rò rỉ!';
+    playLoseSound();
+    document.getElementById('statusText').style.color = '#ffa726';
+    document.getElementById('statusText').innerText = '⚠️ Đường ống chưa khớp, nước chưa chảy qua được!';
   }
 }
 
-function resetGame() {
-  stepsLeft = 12;
-  grid.forEach(cell => {
-    cell.connected = false;
-    if(cell.type !== 'source' && cell.type !== 'target') {
-      cell.rot = Math.floor(Math.random() * 4);
-    }
-  });
-  grid[0].connected = true;
-  document.getElementById('statusText').style.color = '#fff';
-  document.getElementById('statusText').innerText = 'Bấm vào ống để xoay đúng đường dẫn!';
-  renderBoard();
+function resetLevel() {
+  loadLevel(currentLevel);
 }
 
-renderBoard();
+function nextLevel() {
+  if (currentLevel < levelsData.length - 1) {
+    loadLevel(currentLevel + 1);
+  }
+}
+
+// Khởi chạy màn 1
+loadLevel(0);
 </script>
 </body>
 </html>
 """
 
-components.html(game_html, height=540)
+components.html(game_html, height=520)
