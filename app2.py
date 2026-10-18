@@ -1,4 +1,4 @@
-﻿import streamlit as st
+import streamlit as st
 import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Pipe Puzzle Game", layout="centered")
@@ -88,8 +88,6 @@ game_html = """
 </div>
 
 <script>
-// Định nghĩa các loại ống và góc xoay (0: 0 độ, 1: 90 độ, 2: 180 độ, 3: 270 độ)
-// 0: Nguồn (Start), 1: Đích (End), 2: Ống thẳng, 3: Ống góc (L)
 let grid = [
   {type: 'source', rotation: 0}, {type: 'straight', rotation: 1}, {type: 'corner', rotation: 2},
   {type: 'corner', rotation: 0}, {type: 'straight', rotation: 0}, {type: 'corner', rotation: 3},
@@ -125,8 +123,7 @@ function rotateTile(index) {
 
 function checkConnection() {
   const statusText = document.getElementById('statusText');
-  // Logic kiểm tra đơn giản mô phỏng
-  let win = grid[2].rotation === 1 && grid[3].rotation === 0; // ví dụ điều kiện thắng
+  let win = grid[2].rotation === 1 && grid[3].rotation === 0;
   if (win) {
     statusText.style.color = '#4caf50';
     statusText.innerText = '🎉 Chúc mừng! Bạn đã dẫn nước thành công!';
@@ -142,8 +139,9 @@ function resetGame() {
       cell.rotation = Math.floor(Math.random() * 4);
     }
   });
-  document.getElementById('statusText.style.color = '#fff';
-  document.getElementById('statusText').innerText = 'Hãy xoay các ống để nối nguồn nước!';
+  const statusText = document.getElementById('statusText');
+  statusText.style.color = '#fff';
+  statusText.innerText = 'Hãy xoay các ống để nối nguồn nước!';
   renderBoard();
 }
 
