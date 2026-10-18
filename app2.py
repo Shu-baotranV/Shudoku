@@ -1,7 +1,11 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Pipe Puzzle Deluxe", layout="centered")
+st.set_page_config(
+    page_title="Pipe Puzzle Deluxe",
+    page_icon="🚰",
+    layout="centered"
+)
 
 st.markdown("""
 <style>
@@ -191,13 +195,11 @@ function playLoseSound() {
   });
 }
 
-// 0: Trên, 1: Phải, 2: Dưới, 3: Trái
-// Định nghĩa cổng kết nối gốc cho từng loại (khi rot=0)
 const BASE_PORTS = {
-  'straight': [1, 3], // Trái-Phải
-  'corner': [2, 3],   // Dưới-Trái
-  'source': [1],      // Phải
-  'target': [3]       // Trái
+  'straight': [1, 3],
+  'corner': [2, 3],
+  'source': [1],
+  'target': [3]
 };
 
 function getTilePorts(type, rot) {
@@ -206,7 +208,6 @@ function getTilePorts(type, rot) {
 }
 
 const levelsData = [
-  // Màn 1: 3x3
   {
     size: 3, maxSteps: Infinity,
     grid: [
@@ -215,7 +216,6 @@ const levelsData = [
       {type: 'straight', rot: 0, correctRot: 0}, {type: 'corner', rot: 2, correctRot: 1}, {type: 'target', rot: 0, correctRot: 0}
     ]
   },
-  // Màn 2: 3x3
   {
     size: 3, maxSteps: Infinity,
     grid: [
@@ -224,7 +224,6 @@ const levelsData = [
       {type: 'corner', rot: 2, correctRot: 1}, {type: 'straight', rot: 1, correctRot: 0}, {type: 'target', rot: 0, correctRot: 0}
     ]
   },
-  // Màn 3: 4x4
   {
     size: 4, maxSteps: 15,
     grid: [
@@ -234,7 +233,6 @@ const levelsData = [
       {type: 'corner', rot: 1, correctRot: 1}, {type: 'straight', rot: 0, correctRot: 0}, {type: 'corner', rot: 2, correctRot: 1}, {type: 'target', rot: 0, correctRot: 0}
     ]
   },
-  // Màn 4: 4x4
   {
     size: 4, maxSteps: 12,
     grid: [
@@ -244,14 +242,13 @@ const levelsData = [
       {type: 'straight', rot: 2, correctRot: 0}, {type: 'corner', rot: 0, correctRot: 1}, {type: 'straight', rot: 1, correctRot: 0}, {type: 'target', rot: 0, correctRot: 0}
     ]
   },
-  // Màn 5: 4x4
   {
     size: 4, maxSteps: 10,
     grid: [
       {type: 'source', rot: 0, correctRot: 0}, {type: 'corner', rot: 3, correctRot: 0}, {type: 'corner', rot: 1, correctRot: 3}, {type: 'straight', rot: 2, correctRot: 1},
       {type: 'straight', rot: 0, correctRot: 1}, {type: 'corner', rot: 2, correctRot: 1}, {type: 'straight', rot: 1, correctRot: 0}, {type: 'corner', rot: 0, correctRot: 2},
       {type: 'corner', rot: 1, correctRot: 0}, {type: 'straight', rot: 3, correctRot: 1}, {type: 'corner', rot: 2, correctRot: 1}, {type: 'straight', rot: 0, correctRot: 1},
-      {type: 'straight', rot: 2, correctRot: 0}, {type: 'corner', rot: 0, correctRot: 1}, {type: 'corner', rot: 1, correctRot: 1}, {type: 'target', rot: 0, correctRot: 0}
+      {type: 'straight', rot: 2, correctRot: 0}, {type: 'corner', rot: 0, correctRot: 3}, {type: 'corner', rot: 1, correctRot: 2}, {type: 'target', rot: 0, correctRot: 0}
     ]
   }
 ];
@@ -431,18 +428,16 @@ function useHint() {
   }
 }
 
-// THUẬT TOÁN KIỂM TRA DÒNG CHẢY CHÍNH XÁC (BFS Pathfinding)
 function checkWin() {
   if (isGameOver || isWon) return;
   let lvl = levelsData[currentLevel];
   let size = lvl.size;
 
-  // Hướng di chuyển tương ứng: 0: Trên (-size), 1: Phải (+1), 2: Dưới (+size), 3: Trái (-1)
   const dirOffset = [-size, 1, size, -1];
   const oppositeDir = [2, 3, 0, 1];
 
   let visited = new Set();
-  let queue = [0]; // Xuất phát từ ô Nguồn (index = 0)
+  let queue = [0];
   visited.add(0);
 
   let reachesTarget = false;
@@ -475,7 +470,6 @@ function checkWin() {
           let nextRot = lvl.grid[nextIdx].rot;
           let nextPorts = getTilePorts(nextType, nextRot);
 
-          // Kiểm tra xem ô kề bên có cổng quay về hướng ngược lại không
           let reqPort = oppositeDir[dir];
           if (nextPorts.includes(reqPort)) {
             visited.add(nextIdx);
@@ -503,4 +497,24 @@ function checkWin() {
     playLoseSound();
     renderBoard();
     document.getElementById('statusText').style.color = '#ffa726';
-    document.getElementById('statusText').innerText = '⚠️ Đường ống bị hở hoặc
+    document.getElementById('statusText').innerText = '⚠️ Đường ống bị hở hoặc chưa nối liền tới đích!';
+  }
+}
+
+function resetLevel() {
+  loadLevel(currentLevel);
+}
+
+function nextLevel() {
+  if (currentLevel < levelsData.length - 1) {
+    loadLevel(currentLevel + 1);
+  }
+}
+
+loadLevel(0);
+</script>
+</body>
+</html>
+"""
+
+components.html(game_html, height=520)
