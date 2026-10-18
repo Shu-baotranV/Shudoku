@@ -208,14 +208,16 @@ function getTilePorts(type, rot) {
 }
 
 const levelsData = [
+  // Màn 1: 3x3
   {
     size: 3, maxSteps: Infinity,
     grid: [
       {type: 'source', rot: 0, correctRot: 0}, {type: 'straight', rot: 1, correctRot: 0}, {type: 'corner', rot: 2, correctRot: 0},
       {type: 'corner', rot: 0, correctRot: 1}, {type: 'straight', rot: 2, correctRot: 1}, {type: 'corner', rot: 1, correctRot: 3},
-      {type: 'straight', rot: 0, correctRot: 0}, {type: 'corner', rot: 2, correctRot: 1}, {type: 'target', rot: 0, correctRot: 0}
+      {type: 'straight', rot: 0, correctRot: 0}, {type: 'corner', rot: 2, correctRot: 2}, {type: 'target', rot: 0, correctRot: 0}
     ]
   },
+  // Màn 2: 3x3
   {
     size: 3, maxSteps: Infinity,
     grid: [
@@ -224,6 +226,7 @@ const levelsData = [
       {type: 'corner', rot: 2, correctRot: 1}, {type: 'straight', rot: 1, correctRot: 0}, {type: 'target', rot: 0, correctRot: 0}
     ]
   },
+  // Màn 3: 4x4
   {
     size: 4, maxSteps: 15,
     grid: [
@@ -233,6 +236,7 @@ const levelsData = [
       {type: 'corner', rot: 1, correctRot: 1}, {type: 'straight', rot: 0, correctRot: 0}, {type: 'corner', rot: 2, correctRot: 1}, {type: 'target', rot: 0, correctRot: 0}
     ]
   },
+  // Màn 4: 4x4
   {
     size: 4, maxSteps: 12,
     grid: [
@@ -242,6 +246,7 @@ const levelsData = [
       {type: 'straight', rot: 2, correctRot: 0}, {type: 'corner', rot: 0, correctRot: 1}, {type: 'straight', rot: 1, correctRot: 0}, {type: 'target', rot: 0, correctRot: 0}
     ]
   },
+  // Màn 5: 4x4
   {
     size: 4, maxSteps: 10,
     grid: [
@@ -433,7 +438,6 @@ function checkWin() {
   let lvl = levelsData[currentLevel];
   let size = lvl.size;
 
-  const dirOffset = [-size, 1, size, -1];
   const oppositeDir = [2, 3, 0, 1];
 
   let visited = new Set();
