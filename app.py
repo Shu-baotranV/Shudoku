@@ -38,7 +38,7 @@ game_html = """
     color: #333;
   }
   .game-wrapper {
-    background: rgba(255, 255, 255, 0.92);
+    background: rgba(255, 255, 255, 0.95);
     border: 4px solid #ff4081;
     border-radius: 20px;
     padding: 20px;
@@ -51,7 +51,6 @@ game_html = """
     position: relative;
     overflow: hidden;
   }
-  /* Họa tiết trang trí vui nhộn */
   .game-wrapper::before {
     content: '🎨 ✨ 🧩 🌟';
     position: absolute;
@@ -109,7 +108,6 @@ game_html = """
     font-family: 'Fredoka One', cursive;
   }
   
-  /* Bảng lưới Sudoku kiểu nghệ thuật */
   .sudoku-grid {
     display: grid;
     gap: 4px;
@@ -129,7 +127,6 @@ game_html = """
     border-radius: 8px;
     outline: none;
     transition: 0.2s;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
   }
   .cell:focus {
     background: #f3e5f5;
@@ -144,13 +141,6 @@ game_html = """
   .cell.error {
     background: #ff5252 !important;
     color: #fff !important;
-    animation: shake 0.3s ease;
-  }
-
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-4px); }
-    75% { transform: translateX(4px); }
   }
 
   .controls {
@@ -172,13 +162,8 @@ game_html = """
     box-shadow: 0 4px 10px rgba(38, 166, 154, 0.4);
     transition: 0.15s;
   }
-  button:hover {
-    filter: brightness(1.1);
-    transform: translateY(-2px);
-  }
-  button:active {
-    transform: translateY(1px);
-  }
+  button:hover { filter: brightness(1.1); transform: translateY(-2px); }
+  button:active { transform: translateY(1px); }
   button.hint-btn { background: linear-gradient(135deg, #ffa726, #fb8c00); box-shadow: 0 4px 10px rgba(255, 167, 38, 0.4); }
   button.next-btn { background: linear-gradient(135deg, #66bb6a, #43a047); box-shadow: 0 4px 10px rgba(102, 187, 106, 0.4); }
   button.start-btn { background: linear-gradient(135deg, #ec407a, #d81b60); font-size: 18px; padding: 12px 32px; margin-top: 10px; box-shadow: 0 6px 15px rgba(236, 64, 122, 0.5); }
@@ -235,32 +220,30 @@ let audioCtx = null;
 let bgMusicInterval = null;
 
 function initAudio() {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
+  try {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  } catch(e) {}
 }
 
-// Nhạc nền phong cách vui tươi, lôi cuốn (Inspirational & Playful Chords)
 function startBgMusic() {
   if (bgMusicInterval) return;
-  const cheerfulMelody = [
-    329.63, 392.00, 440.00, 523.25, // E4, G4, A4, C5
-    392.00, 440.00, 523.25, 659.25  // G4, A4, C5, E5
-  ];
+  const cheerfulMelody = [329.63, 392.00, 440.00, 523.25, 392.00, 440.00, 523.25, 659.25];
   let step = 0;
   bgMusicInterval = setInterval(() => {
     try {
-      if(!audioCtx) return;
+      if(!audioCtx || audioCtx.state !== 'running') return;
       let freq = cheerfulMelody[step % cheerfulMelody.length];
       
       let osc = audioCtx.createOscillator();
       let gain = audioCtx.createGain();
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
       osc.connect(gain); gain.connect(audioCtx.destination);
       osc.start(); osc.stop(audioCtx.currentTime + 0.3);
@@ -270,18 +253,17 @@ function startBgMusic() {
   }, 400);
 }
 
-// Hệ thống âm thanh sống động, vui nhộn
 function playSound(type) {
-  initAudio();
   try {
+    initAudio();
     let osc = audioCtx.createOscillator();
     let gain = audioCtx.createGain();
     
     if (type === 'correct') {
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(659.25, audioCtx.currentTime); // E5
-      osc.frequency.exponentialRampToValueAtTime(1046.50, audioCtx.currentTime + 0.15); // C6
-      gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+      osc.frequency.setValueAtTime(659.25, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1046.50, audioCtx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
       osc.connect(gain); gain.connect(audioCtx.destination);
       osc.start(); osc.stop(audioCtx.currentTime + 0.2);
@@ -289,18 +271,18 @@ function playSound(type) {
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(180, audioCtx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(90, audioCtx.currentTime + 0.25);
-      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
       osc.connect(gain); gain.connect(audioCtx.destination);
       osc.start(); osc.stop(audioCtx.currentTime + 0.25);
     } else if (type === 'win') {
-      const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98];
+      const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
       notes.forEach((f, i) => {
         setTimeout(() => {
           let o = audioCtx.createOscillator();
           let g = audioCtx.createGain();
           o.type = 'triangle'; o.frequency.setValueAtTime(f, audioCtx.currentTime);
-          g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          g.gain.setValueAtTime(0.15, audioCtx.currentTime);
           g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
           o.connect(g); g.connect(audioCtx.destination);
           o.start(); o.stop(audioCtx.currentTime + 0.4);
@@ -313,7 +295,7 @@ function playSound(type) {
           let o = audioCtx.createOscillator();
           let g = audioCtx.createGain();
           o.type = 'sawtooth'; o.frequency.setValueAtTime(f, audioCtx.currentTime);
-          g.gain.setValueAtTime(0.12, audioCtx.currentTime);
+          g.gain.setValueAtTime(0.1, audioCtx.currentTime);
           g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
           o.connect(g); g.connect(audioCtx.destination);
           o.start(); o.stop(audioCtx.currentTime + 0.3);
@@ -500,7 +482,7 @@ function checkAnswer() {
   } else {
     playSound('lose');
     document.getElementById('statusText').style.color = '#d32f2f';
-    document.getElementById('statusText'].innerText = '❌ Có số điền chưa chính xác (ô màu đỏ)!';
+    document.getElementById('statusText').innerText = '❌ Có số điền chưa chính xác (ô màu đỏ)!';
   }
 }
 
