@@ -207,6 +207,7 @@ function getTilePorts(type, rot) {
   return base.map(p => (p + rot) % 4);
 }
 
+// Dữ liệu 5 màn chơi với góc đúng (correctRot) đã được chuẩn hóa đồng bộ với BFS
 const levelsData = [
   // Màn 1: 3x3
   {
@@ -214,7 +215,7 @@ const levelsData = [
     grid: [
       {type: 'source', rot: 0, correctRot: 0}, {type: 'straight', rot: 1, correctRot: 0}, {type: 'corner', rot: 2, correctRot: 0},
       {type: 'corner', rot: 0, correctRot: 1}, {type: 'straight', rot: 2, correctRot: 1}, {type: 'corner', rot: 1, correctRot: 3},
-      {type: 'straight', rot: 0, correctRot: 0}, {type: 'corner', rot: 2, correctRot: 2}, {type: 'target', rot: 0, correctRot: 0}
+      {type: 'straight', rot: 0, correctRot: 0}, {type: 'corner', rot: 2, correctRot: 1}, {type: 'target', rot: 0, correctRot: 0}
     ]
   },
   // Màn 2: 3x3
