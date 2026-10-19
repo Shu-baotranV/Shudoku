@@ -2,15 +2,15 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 st.set_page_config(
-    page_title="Pipe Puzzle Deluxe",
-    page_icon="🚰",
+    page_title="Sudoku Master Deluxe",
+    page_icon="🔢",
     layout="centered"
 )
 
 st.markdown("""
 <style>
     .block-container {
-        padding-top: 1rem;
+        padding-top: 0.5rem;
         padding-bottom: 0rem;
     }
 </style>
@@ -22,7 +22,7 @@ game_html = """
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pipe Puzzle Deluxe</title>
+<title>Sudoku Master Deluxe</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
   body {
@@ -36,7 +36,7 @@ game_html = """
     color: #fff;
   }
   .game-wrapper {
-    background: #1c1c1c;
+    background: #1e1e1e;
     border: 3px solid #333;
     border-radius: 12px;
     padding: 15px;
@@ -44,8 +44,19 @@ game_html = """
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 380px;
+    max-width: 420px;
+    width: 100%;
   }
+  .screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    text-align: center;
+  }
+  h1 { font-size: 24px; color: #4fc3f7; margin-bottom: 10px; }
+  p { font-size: 14px; color: #b0bec5; margin-bottom: 15px; line-height: 1.5; text-align: left; padding: 0 10px; }
+  
   .header-info {
     width: 100%;
     display: flex;
@@ -58,37 +69,52 @@ game_html = """
   }
   .badge {
     background: #263238;
-    padding: 5px 10px;
-    border-radius: 15px;
+    padding: 4px 10px;
+    border-radius: 12px;
     border: 1px solid #455a64;
     color: #80d8ff;
     font-size: 12px;
   }
-  .game-board {
+  
+  /* Bảng lưới Sudoku */
+  .sudoku-grid {
     display: grid;
-    gap: 4px;
-    background: #0d0d0d;
-    padding: 8px;
-    border-radius: 10px;
-    border: 2px solid #282828;
-    box-shadow: inset 0 0 10px #000;
-  }
-  canvas.tile-canvas {
-    background: #222;
+    gap: 2px;
+    background: #444;
+    padding: 3px;
     border-radius: 6px;
-    cursor: pointer;
-    transition: transform 0.15s, filter 0.15s;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    margin-bottom: 12px;
   }
-  canvas.tile-canvas:hover {
-    filter: brightness(1.2);
+  .cell {
+    background: #282828;
+    border: none;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    color: #4fc3f7;
+    border-radius: 3px;
+    outline: none;
+    transition: 0.1s;
   }
+  .cell:focus {
+    background: #37474f;
+    color: #fff;
+  }
+  .cell.fixed {
+    background: #1f1f1f;
+    color: #e0e0e0;
+  }
+  .cell.error {
+    background: #c62828 !important;
+    color: #fff;
+  }
+
   .controls {
-    margin-top: 12px;
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
     justify-content: center;
+    margin-top: 8px;
   }
   button {
     background: #00838f;
@@ -108,11 +134,13 @@ game_html = """
   }
   button.hint-btn { background: #f57c00; box-shadow: 0 3px #e65100; }
   button.next-btn { background: #2e7d32; box-shadow: 0 3px #1b5e20; }
+  button.start-btn { background: #0288d1; box-shadow: 0 3px #01579b; font-size: 16px; padding: 10px 25px; margin-top: 10px;}
+
   .status-msg {
-    margin-top: 10px;
-    font-size: 14px;
+    margin-top: 8px;
+    font-size: 13px;
     font-weight: bold;
-    height: 22px;
+    height: 20px;
     text-align: center;
   }
 </style>
@@ -120,389 +148,372 @@ game_html = """
 <body>
 
 <div class="game-wrapper">
-  <div class="header-info">
-    <span id="levelTitle">MÀN 1 / 5</span>
-    <div class="badge" id="stepsText">Lượt: Không giới hạn</div>
+
+  <!-- MÀN HÌNH HƯỚNG DẪN -->
+  <div id="tutorial-screen" class="screen">
+    <h1>🔢 HƯỚNG DẪN CHƠI SUDOKU</h1>
+    <p>
+      <b>1. Mục tiêu:</b> Điền các con số vào ô trống sao cho hợp lệ.<br>
+      <b>2. Quy tắc 5x5 / 9x9:</b> Mỗi hàng ngang, cột dọc và vùng lưới nhỏ không được chứa các số trùng lặp.<br>
+      <b>3. Lượt gợi ý:</b> Mỗi màn chơi bạn có tối đa <b>3 lượt gợi ý (💡)</b> nếu gặp khó khăn.<br>
+      <b>4. Thử thách:</b> Vượt qua đủ 5 màn chơi với độ khó tăng dần từ 5x5 lên 9x9!
+    </p>
+    <button class="btn start-btn" onclick="startTheGame()">BẮT ĐẦU CHƠI</button>
   </div>
 
-  <div class="game-board" id="board"></div>
+  <!-- MÀN HÌNH CHƠI GAME -->
+  <div id="game-screen" class="screen" style="display: none;">
+    <div class="header-info">
+      <span id="levelTitle">MÀN 1 (5x5)</span>
+      <div class="badge" id="hintBadge">Gợi ý còn: 3</div>
+    </div>
 
-  <div class="status-msg" id="statusText">Xoay ống để kết nối nguồn nước!</div>
+    <div class="sudoku-grid" id="board"></div>
 
-  <div class="controls">
-    <button onclick="useHint()" class="hint-btn">💡 Gợi ý</button>
-    <button onclick="checkWin()">Kiểm tra</button>
-    <button onclick="resetLevel()" style="background: #e65100; box-shadow: 0 3px #bf360c;">Chơi lại</button>
-    <button onclick="nextLevel()" class="next-btn" id="nextBtn" style="display:none;">Màn tiếp ➡</button>
+    <div class="status-msg" id="statusText">Hãy điền các số thích hợp vào ô trống!</div>
+
+    <div class="controls">
+      <button onclick="useHint()" class="hint-btn" id="hintBtn">💡 Gợi ý (3)</button>
+      <button onclick="checkAnswer()">Kiểm tra</button>
+      <button onclick="resetLevel()" style="background: #d32f2f; box-shadow: 0 3px #b71c1c;">Làm lại</button>
+      <button onclick="nextLevel()" class="next-btn" id="nextBtn" style="display:none;">Màn tiếp ➡</button>
+    </div>
   </div>
+
 </div>
 
 <script>
+// Quản lý Âm thanh Web Audio API
 let audioCtx = null;
+let bgMusicInterval = null;
+
 function initAudio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
 }
 
-function playRotateSound() {
+// Nhạc nền nhẹ nhàng lặp lại
+function startBgMusic() {
+  if (bgMusicInterval) return;
+  const melody = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63]; // C4, E4, G4, C5...
+  let index = 0;
+  bgMusicInterval = setInterval(() => {
+    try {
+      if(!audioCtx) return;
+      let osc = audioCtx.createOscillator();
+      let gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(melody[index], audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+      index = (index + 1) % melody.length;
+    } catch(e){}
+  }, 1200);
+}
+
+function playSound(type) {
   initAudio();
   try {
     let osc = audioCtx.createOscillator();
     let gain = audioCtx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(320, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.04);
-    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.start(); osc.stop(audioCtx.currentTime + 0.04);
+    if (type === 'correct') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+    } else if (type === 'wrong') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+    } else if (type === 'win') {
+      const notes = [523.25, 659.25, 783.99, 1046.50];
+      notes.forEach((f, i) => {
+        setTimeout(() => {
+          let o = audioCtx.createOscillator();
+          let g = audioCtx.createGain();
+          o.type = 'sine'; o.frequency.setValueAtTime(f, audioCtx.currentTime);
+          g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
+          o.connect(g); g.connect(audioCtx.destination);
+          o.start(); o.stop(audioCtx.currentTime + 0.3);
+        }, i * 100);
+      });
+    } else if (type === 'lose') {
+      const notes = [300, 250, 200];
+      notes.forEach((f, i) => {
+        setTimeout(() => {
+          let o = audioCtx.createOscillator();
+          let g = audioCtx.createGain();
+          o.type = 'sawtooth'; o.frequency.setValueAtTime(f, audioCtx.currentTime);
+          g.gain.setValueAtTime(0.08, audioCtx.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.25);
+          o.connect(g); g.connect(audioCtx.destination);
+          o.start(); o.stop(audioCtx.currentTime + 0.25);
+        }, i * 120);
+      });
+    }
   } catch(e) {}
 }
 
-function playWinSound() {
-  initAudio();
-  const notes = [523.25, 659.25, 783.99, 1046.50];
-  notes.forEach((freq, i) => {
-    setTimeout(() => {
-      try {
-        let osc = audioCtx.createOscillator();
-        let gain = audioCtx.createGain();
-        osc.type = 'sine'; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-      } catch(e){}
-    }, i * 120);
-  });
-}
-
-function playLoseSound() {
-  initAudio();
-  const notes = [300, 260, 220, 180];
-  notes.forEach((freq, i) => {
-    setTimeout(() => {
-      try {
-        let osc = audioCtx.createOscillator();
-        let gain = audioCtx.createGain();
-        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.25);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.25);
-      } catch(e){}
-    }, i * 150);
-  });
-}
-
-const BASE_PORTS = {
-  'straight': [1, 3],
-  'corner': [2, 3],
-  'source': [1],
-  'target': [3]
-};
-
-function getTilePorts(type, rot) {
-  let base = BASE_PORTS[type] || [];
-  return base.map(p => (p + rot) % 4);
-}
-
-// Dữ liệu 5 màn chơi với góc đúng (correctRot) đã được chuẩn hóa đồng bộ với BFS
-const levelsData = [
-  // Màn 1: 3x3
+// Định nghĩa 5 màn chơi (0: ô trống cần điền)
+// Màn 1 & 2: 5x5. Màn 3, 4, 5: 9x9.
+const levels = [
+  // Màn 1 (5x5) - Rất dễ
   {
-    size: 3, maxSteps: Infinity,
-    grid: [
-      {type: 'source', rot: 0, correctRot: 0}, {type: 'straight', rot: 1, correctRot: 0}, {type: 'corner', rot: 2, correctRot: 0},
-      {type: 'corner', rot: 0, correctRot: 1}, {type: 'straight', rot: 2, correctRot: 1}, {type: 'corner', rot: 1, correctRot: 3},
-      {type: 'straight', rot: 0, correctRot: 0}, {type: 'corner', rot: 2, correctRot: 1}, {type: 'target', rot: 0, correctRot: 0}
+    size: 5,
+    solution: [
+      1,2,3,4,5,
+      3,4,5,1,2,
+      5,1,2,3,4,
+      2,3,4,5,1,
+      4,5,1,2,3
+    ],
+    puzzle: [
+      1,0,3,0,5,
+      0,4,0,1,0,
+      5,0,2,0,4,
+      0,3,0,5,0,
+      4,0,1,0,3
     ]
   },
-  // Màn 2: 3x3
+  // Màn 2 (5x5) - Dễ
   {
-    size: 3, maxSteps: Infinity,
-    grid: [
-      {type: 'source', rot: 0, correctRot: 0}, {type: 'corner', rot: 1, correctRot: 0}, {type: 'straight', rot: 0, correctRot: 1},
-      {type: 'straight', rot: 2, correctRot: 1}, {type: 'corner', rot: 3, correctRot: 2}, {type: 'corner', rot: 0, correctRot: 3},
-      {type: 'corner', rot: 2, correctRot: 1}, {type: 'straight', rot: 1, correctRot: 0}, {type: 'target', rot: 0, correctRot: 0}
+    size: 5,
+    solution: [
+      2,3,1,5,4,
+      4,5,2,3,1,
+      1,2,3,4,5,
+      5,1,4,2,3,
+      3,4,5,1,2
+    ],
+    puzzle: [
+      2,0,1,0,4,
+      0,5,0,3,0,
+      1,0,3,0,5,
+      0,1,0,2,0,
+      3,0,5,0,2
     ]
   },
-  // Màn 3: 4x4
+  // Màn 3 (9x9) - Trung bình
   {
-    size: 4, maxSteps: 15,
-    grid: [
-      {type: 'source', rot: 0, correctRot: 0}, {type: 'straight', rot: 2, correctRot: 0}, {type: 'corner', rot: 1, correctRot: 0}, {type: 'straight', rot: 0, correctRot: 1},
-      {type: 'corner', rot: 3, correctRot: 1}, {type: 'straight', rot: 1, correctRot: 0}, {type: 'corner', rot: 2, correctRot: 2}, {type: 'corner', rot: 0, correctRot: 1},
-      {type: 'straight', rot: 1, correctRot: 1}, {type: 'corner', rot: 0, correctRot: 0}, {type: 'straight', rot: 2, correctRot: 0}, {type: 'corner', rot: 3, correctRot: 3},
-      {type: 'corner', rot: 1, correctRot: 1}, {type: 'straight', rot: 0, correctRot: 0}, {type: 'corner', rot: 2, correctRot: 1}, {type: 'target', rot: 0, correctRot: 0}
+    size: 9,
+    solution: [
+      5,3,4,6,7,8,9,1,2,
+      6,7,2,1,9,5,3,4,8,
+      1,9,8,3,4,2,5,6,7,
+      8,5,9,7,6,1,4,2,3,
+      4,2,6,8,5,3,7,9,1,
+      7,1,3,9,2,4,8,5,6,
+      9,6,1,5,3,7,2,8,4,
+      2,8,7,4,1,9,6,3,5,
+      3,4,5,2,8,6,1,7,9
+    ],
+    puzzle: [
+      5,3,0,0,7,0,0,0,2,
+      6,0,0,1,9,5,0,0,0,
+      0,9,8,0,0,0,0,6,0,
+      8,0,0,0,6,0,0,0,3,
+      4,0,0,8,0,3,0,0,1,
+      7,0,0,0,2,0,0,0,6,
+      0,6,0,0,0,0,2,8,0,
+      0,0,0,4,1,9,0,0,5,
+      3,0,0,0,8,0,0,7,9
     ]
   },
-  // Màn 4: 4x4
+  // Màn 4 (9x9) - Khó
   {
-    size: 4, maxSteps: 12,
-    grid: [
-      {type: 'source', rot: 0, correctRot: 0}, {type: 'corner', rot: 2, correctRot: 0}, {type: 'straight', rot: 1, correctRot: 1}, {type: 'corner', rot: 0, correctRot: 3},
-      {type: 'straight', rot: 3, correctRot: 1}, {type: 'corner', rot: 1, correctRot: 1}, {type: 'corner', rot: 2, correctRot: 0}, {type: 'straight', rot: 0, correctRot: 1},
-      {type: 'corner', rot: 0, correctRot: 1}, {type: 'straight', rot: 1, correctRot: 0}, {type: 'corner', rot: 3, correctRot: 2}, {type: 'corner', rot: 1, correctRot: 3},
-      {type: 'straight', rot: 2, correctRot: 0}, {type: 'corner', rot: 0, correctRot: 1}, {type: 'straight', rot: 1, correctRot: 0}, {type: 'target', rot: 0, correctRot: 0}
+    size: 9,
+    solution: [
+      8,2,7,1,5,4,3,9,6,
+      9,6,5,3,2,7,1,4,8,
+      3,4,1,6,8,9,7,5,2,
+      5,9,3,4,6,8,2,7,1,
+      4,7,2,5,1,3,6,8,9,
+      6,8,1,9,7,2,4,3,5,
+      7,1,8,2,4,5,9,6,3,
+      2,3,9,7,6,1,8,5,4,
+      5,4,6,8,3,9,1,2,7
+    ],
+    puzzle: [
+      8,0,0,1,0,0,0,0,6,
+      0,6,5,0,0,0,1,4,0,
+      0,4,0,0,8,0,0,5,0,
+      5,0,3,0,0,0,2,0,1,
+      0,7,0,5,0,3,0,8,0,
+      6,0,1,0,0,0,4,0,5,
+      0,1,0,0,4,0,0,6,0,
+      0,3,9,0,0,0,8,5,0,
+      5,0,0,0,0,9,0,0,7
     ]
   },
-  // Màn 5: 4x4
+  // Màn 5 (9x9) - Siêu khó
   {
-    size: 4, maxSteps: 10,
-    grid: [
-      {type: 'source', rot: 0, correctRot: 0}, {type: 'corner', rot: 3, correctRot: 0}, {type: 'corner', rot: 1, correctRot: 3}, {type: 'straight', rot: 2, correctRot: 1},
-      {type: 'straight', rot: 0, correctRot: 1}, {type: 'corner', rot: 2, correctRot: 1}, {type: 'straight', rot: 1, correctRot: 0}, {type: 'corner', rot: 0, correctRot: 2},
-      {type: 'corner', rot: 1, correctRot: 0}, {type: 'straight', rot: 3, correctRot: 1}, {type: 'corner', rot: 2, correctRot: 1}, {type: 'straight', rot: 0, correctRot: 1},
-      {type: 'straight', rot: 2, correctRot: 0}, {type: 'corner', rot: 0, correctRot: 3}, {type: 'corner', rot: 1, correctRot: 2}, {type: 'target', rot: 0, correctRot: 0}
+    size: 5, // Sẽ override thành 9x9 ở logic dưới
+    size: 9,
+    solution: [
+      1,2,3,4,5,6,7,8,9,
+      4,5,6,7,8,9,1,2,3,
+      7,8,9,1,2,3,4,5,6,
+      2,1,4,3,6,5,8,9,7,
+      3,6,5,8,9,7,2,1,4,
+      8,9,7,2,1,4,3,6,5,
+      5,3,1,6,4,2,9,7,8,
+      6,4,2,9,7,8,5,3,1,
+      9,7,8,5,3,1,6,4,2
+    ],
+    puzzle: [
+      1,0,3,0,5,0,7,0,9,
+      0,5,0,7,0,9,0,2,0,
+      7,0,9,0,2,0,4,0,6,
+      2,0,4,0,6,0,8,0,7,
+      0,6,0,8,0,7,0,1,0,
+      8,0,7,0,1,0,3,0,5,
+      5,0,1,0,4,0,9,0,8,
+      0,4,0,9,0,8,0,3,0,
+      9,0,8,0,3,0,6,0,2
     ]
   }
 ];
 
 let currentLevel = 0;
-let stepsLeft = 0;
-let isGameOver = false;
+let hintsLeft = 3;
 let isWon = false;
-let connectedTiles = new Set();
+
+function startTheGame() {
+  initAudio();
+  startBgMusic();
+  document.getElementById('tutorial-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'flex';
+  loadLevel(0);
+}
 
 function loadLevel(lvlIdx) {
   currentLevel = lvlIdx;
-  let lvl = levelsData[currentLevel];
-  stepsLeft = lvl.maxSteps;
-  isGameOver = false;
+  hintsLeft = 3;
   isWon = false;
-  connectedTiles.clear();
   
+  let lvl = levels[currentLevel];
+  document.getElementById('levelTitle').innerText = `MÀN ${currentLevel + 1} (${lvl.size}x${lvl.size})`;
+  document.getElementById('hintBadge').innerText = `Gợi ý còn: ${hintsLeft}`;
+  document.getElementById('hintBtn').innerText = `💡 Gợi ý (${hintsLeft})`;
   document.getElementById('nextBtn').style.display = 'none';
-  document.getElementById('levelTitle').innerText = `MÀN ${currentLevel + 1} / 5`;
   document.getElementById('statusText').style.color = '#fff';
-  document.getElementById('statusText').innerText = 'Xoay ống để kết nối nguồn nước!';
-  
-  if(stepsLeft === Infinity) {
-    document.getElementById('stepsText').innerText = 'Lượt: Không giới hạn';
-  } else {
-    document.getElementById('stepsText').innerText = `Lượt còn lại: ${stepsLeft}`;
-  }
+  document.getElementById('statusText').innerText = 'Hãy điền các số thích hợp vào ô trống!';
 
   const board = document.getElementById('board');
-  board.style.gridTemplateColumns = `repeat(${lvl.size}, ${lvl.size === 3 ? 90 : 75}px)`;
-  board.style.gridTemplateRows = `repeat(${lvl.size}, ${lvl.size === 3 ? 90 : 75}px)`;
-  
-  renderBoard();
-}
-
-function renderBoard() {
-  const board = document.getElementById('board');
+  board.style.gridTemplateColumns = `repeat(${lvl.size}, ${lvl.size === 5 ? 50 : 35}px)`;
+  board.style.gridTemplateRows = `repeat(${lvl.size}, ${lvl.size === 5 ? 50 : 35}px)`;
   board.innerHTML = '';
-  let lvl = levelsData[currentLevel];
-  let tileSize = lvl.size === 3 ? 90 : 75;
 
-  lvl.grid.forEach((cell, index) => {
-    const canvas = document.createElement('canvas');
-    canvas.className = 'tile-canvas';
-    canvas.width = tileSize;
-    canvas.height = tileSize;
-    
-    drawPipe(canvas, cell.type, cell.rot, connectedTiles.has(index));
+  let totalCells = lvl.size * lvl.size;
+  for (let i = 0; i < totalCells; i++) {
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = 1;
+    input.max = lvl.size;
+    input.className = 'cell';
+    input.style.width = lvl.size === 5 ? '50px' : '35px';
+    input.style.height = lvl.size === 5 ? '50px' : '35px';
+    input.style.fontSize = lvl.size === 5 ? '20px' : '16px';
 
-    canvas.onclick = () => rotateTile(index);
-    board.appendChild(canvas);
-  });
-}
-
-function drawPipe(canvas, type, rot, isConnected) {
-  const ctx = canvas.getContext('2d');
-  const w = canvas.width;
-  const center = w / 2;
-  const pipeR = w === 90 ? 16 : 14;
-
-  ctx.clearRect(0, 0, w, w);
-
-  ctx.fillStyle = '#262626';
-  ctx.fillRect(0, 0, w, w);
-  ctx.strokeStyle = '#1a1a1a';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(0, 0, w, w);
-
-  ctx.save();
-  ctx.translate(center, center);
-  ctx.rotate(rot * Math.PI / 2);
-  ctx.translate(-center, -center);
-
-  function getGrad() {
-    let grad = ctx.createLinearGradient(0, center - pipeR, 0, center + pipeR);
-    if(isConnected) {
-      grad.addColorStop(0, '#1b5e20');
-      grad.addColorStop(0.3, '#66bb6a');
-      grad.addColorStop(0.7, '#81c784');
-      grad.addColorStop(1, '#1b5e20');
+    let val = lvl.puzzle[i];
+    if (val !== 0) {
+      input.value = val;
+      input.disabled = true;
+      input.classList.add('fixed');
     } else {
-      grad.addColorStop(0, '#37474f');
-      grad.addColorStop(0.3, '#90a4ae');
-      grad.addColorStop(0.7, '#cfd8dc');
-      grad.addColorStop(1, '#263238');
+      input.oninput = (e) => {
+        let v = parseInt(e.target.value);
+        if (v >= 1 && v <= lvl.size) {
+          if (v === lvl.solution[i]) {
+            playSound('correct');
+          } else {
+            playSound('wrong');
+          }
+        }
+      };
     }
-    return grad;
-  }
-
-  if (type === 'straight') {
-    ctx.fillStyle = getGrad();
-    ctx.fillRect(0, center - pipeR, w, pipeR * 2);
-    ctx.fillStyle = isConnected ? '#4caf50' : '#78909c';
-    ctx.fillRect(8, center - pipeR - 3, 6, pipeR * 2 + 6);
-    ctx.fillRect(w - 14, center - pipeR - 3, 6, pipeR * 2 + 6);
-  } 
-  else if (type === 'corner') {
-    ctx.beginPath();
-    ctx.arc(0, w, w - center + pipeR, -Math.PI/2, 0);
-    ctx.arc(0, w, w - center - pipeR, 0, -Math.PI/2, true);
-    ctx.closePath();
-    ctx.fillStyle = getGrad();
-    ctx.fill();
-    ctx.fillStyle = isConnected ? '#4caf50' : '#78909c';
-    ctx.fillRect(0, center - pipeR - 3, 6, pipeR * 2 + 6);
-    ctx.fillRect(center - pipeR - 3, w - 6, pipeR * 2 + 6, 6);
-  } 
-  else if (type === 'source') {
-    ctx.fillStyle = getGrad();
-    ctx.fillRect(0, center - pipeR, center, pipeR * 2);
-    ctx.fillStyle = '#2e7d32';
-    ctx.beginPath(); ctx.arc(center, center, 20, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#a5d6a7'; ctx.lineWidth = 2; ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.font = '16px Arial'; ctx.textAlign = 'center';
-    ctx.fillText('💧', center, center + 6);
-  } 
-  else if (type === 'target') {
-    ctx.fillStyle = getGrad();
-    ctx.fillRect(0, center - pipeR, center, pipeR * 2);
-    ctx.fillStyle = '#c62828';
-    ctx.beginPath(); ctx.arc(center, center, 18, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#ef9a9a'; ctx.lineWidth = 2; ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.font = '14px Arial'; ctx.textAlign = 'center';
-    ctx.fillText('⚙️', center, center + 5);
-  }
-
-  ctx.restore();
-}
-
-function rotateTile(index) {
-  if (isGameOver || isWon) return;
-  let lvl = levelsData[currentLevel];
-  let cell = lvl.grid[index];
-
-  if (cell.type !== 'source' && cell.type !== 'target') {
-    cell.rot = (cell.rot + 1) % 4;
-    playRotateSound();
-
-    if (lvl.maxSteps !== Infinity) {
-      stepsLeft--;
-      document.getElementById('stepsText').innerText = `Lượt còn lại: ${stepsLeft}`;
-      if (stepsLeft <= 0) {
-        isGameOver = true;
-        playLoseSound();
-        document.getElementById('statusText').style.color = '#ef5350';
-        document.getElementById('statusText').innerText = '❌ Hết lượt xoay! Bạn đã thua cuộc.';
-        return;
-      }
-    }
-    connectedTiles.clear();
-    renderBoard();
+    board.appendChild(input);
   }
 }
 
 function useHint() {
-  if (isGameOver || isWon) return;
-  let lvl = levelsData[currentLevel];
-  let wrongCells = [];
-  
-  lvl.grid.forEach((cell, idx) => {
-    if (cell.type !== 'source' && cell.type !== 'target' && cell.rot !== cell.correctRot) {
-      wrongCells.push(idx);
+  if (isWon) return;
+  if (hintsLeft <= 0) {
+    document.getElementById('statusText').style.color = '#ff9800';
+    document.getElementById('statusText').innerText = '⚠️ Bạn đã dùng hết lượt gợi ý!';
+    return;
+  }
+
+  let lvl = levels[currentLevel];
+  let inputs = document.querySelectorAll('.cell');
+  let emptyIndices = [];
+
+  inputs.forEach((inp, idx) => {
+    if (!inp.disabled && (inp.value == "" || parseInt(inp.value) !== lvl.solution[idx])) {
+      emptyIndices.push(idx);
     }
   });
 
-  if (wrongCells.length > 0) {
-    let randIdx = wrongCells[Math.floor(Math.random() * wrongCells.length)];
-    lvl.grid[randIdx].rot = lvl.grid[randIdx].correctRot;
-    playRotateSound();
-    connectedTiles.clear();
-    renderBoard();
+  if (emptyIndices.length > 0) {
+    let randIdx = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+    inputs[randIdx].value = lvl.solution[randIdx];
+    inputs[randIdx].style.color = '#00e676';
+    hintsLeft--;
+    document.getElementById('hintBadge').innerText = `Gợi ý còn: ${hintsLeft}`;
+    document.getElementById('hintBtn').innerText = `💡 Gợi ý (${hintsLeft})`;
+    playSound('correct');
     document.getElementById('statusText').style.color = '#00bcd4';
-    document.getElementById('statusText').innerText = '💡 Gợi ý: Đã chỉnh 1 đoạn ống đúng vị trí!';
+    document.getElementById('statusText').innerText = '💡 Đã điền giúp bạn 1 ô đúng!';
   } else {
-    document.getElementById('statusText').innerText = '✨ Tất cả các ống đã đúng vị trí rồi!';
+    document.getElementById('statusText').innerText = '✨ Các ô trống hiện tại đều đã đúng!';
   }
 }
 
-function checkWin() {
-  if (isGameOver || isWon) return;
-  let lvl = levelsData[currentLevel];
-  let size = lvl.size;
+function checkAnswer() {
+  if (isWon) return;
+  let lvl = levels[currentLevel];
+  let inputs = document.querySelectorAll('.cell');
+  let isAllCorrect = true;
 
-  const oppositeDir = [2, 3, 0, 1];
-
-  let visited = new Set();
-  let queue = [0];
-  visited.add(0);
-
-  let reachesTarget = false;
-
-  while (queue.length > 0) {
-    let curr = queue.shift();
-    let currType = lvl.grid[curr].type;
-    let currRot = lvl.grid[curr].rot;
-    let currPorts = getTilePorts(currType, currRot);
-
-    if (currType === 'target') {
-      reachesTarget = true;
+  inputs.forEach((inp, idx) => {
+    let val = parseInt(inp.value);
+    if (val !== lvl.solution[idx]) {
+      isAllCorrect = false;
+      if (!inp.disabled) inp.classList.add('error');
+    } else {
+      inp.classList.remove('error');
     }
+  });
 
-    let r = Math.floor(curr / size);
-    let c = curr % size;
-
-    currPorts.forEach(dir => {
-      let nr = r;
-      let nc = c;
-      if (dir === 0) nr--;
-      else if (dir === 1) nc++;
-      else if (dir === 2) nr++;
-      else if (dir === 3) nc--;
-
-      if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
-        let nextIdx = nr * size + nc;
-        if (!visited.has(nextIdx)) {
-          let nextType = lvl.grid[nextIdx].type;
-          let nextRot = lvl.grid[nextIdx].rot;
-          let nextPorts = getTilePorts(nextType, nextRot);
-
-          let reqPort = oppositeDir[dir];
-          if (nextPorts.includes(reqPort)) {
-            visited.add(nextIdx);
-            queue.push(nextIdx);
-          }
-        }
-      }
-    });
-  }
-
-  connectedTiles = visited;
-
-  if (reachesTarget) {
+  if (isAllCorrect) {
     isWon = true;
-    playWinSound();
+    playSound('win');
     document.getElementById('statusText').style.color = '#66bb6a';
-    document.getElementById('statusText').innerText = '🎉 Hoan hô! Nước đã chảy liên tục tới đích!';
-    renderBoard();
-    if (currentLevel < levelsData.length - 1) {
+    document.getElementById('statusText').innerText = '🎉 Chúc mừng! Bạn đã hoàn thành xuất sắc màn này!';
+    
+    if (currentLevel < levels.length - 1) {
       document.getElementById('nextBtn').style.display = 'inline-block';
     } else {
-      document.getElementById('statusText').innerText = '🏆 Chúc mừng bạn đã phá đảo toàn bộ 5 màn!';
+      document.getElementById('statusText').innerText = '🏆 TUYỆT VỜI! Bạn đã phá đảo toàn bộ 5 màn Sudoku!';
     }
   } else {
-    playLoseSound();
-    renderBoard();
-    document.getElementById('statusText').style.color = '#ffa726';
-    document.getElementById('statusText').innerText = '⚠️ Đường ống bị hở hoặc chưa nối liền tới đích!';
+    playSound('lose');
+    document.getElementById('statusText').style.color = '#ef5350';
+    document.getElementById('statusText').innerText = '❌ Có số điền chưa chính xác (ô màu đỏ)!';
   }
 }
 
@@ -511,15 +522,13 @@ function resetLevel() {
 }
 
 function nextLevel() {
-  if (currentLevel < levelsData.length - 1) {
+  if (currentLevel < levels.length - 1) {
     loadLevel(currentLevel + 1);
   }
 }
-
-loadLevel(0);
 </script>
 </body>
 </html>
 """
 
-components.html(game_html, height=520)
+components.html(game_html, height=580)
