@@ -2,8 +2,8 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 st.set_page_config(
-    page_title="Sudoku Master Deluxe",
-    page_icon="🔢",
+    page_title="Artistic Sudoku Master",
+    page_icon="🎨",
     layout="centered"
 )
 
@@ -22,25 +22,27 @@ game_html = """
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sudoku Master Deluxe</title>
+<title>Artistic Sudoku Master</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@600;700&display=swap');
+
   * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
   body {
-    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    background: linear-gradient(135deg, #fce4ec, #e0f7fa, #fff9c4);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #fff;
+    font-family: 'Quicksand', sans-serif;
+    color: #333;
   }
   .game-wrapper {
-    background: rgba(30, 30, 46, 0.95);
-    border: 3px solid #ff007f;
-    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 4px solid #ff4081;
+    border-radius: 20px;
     padding: 20px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.8), 0 0 20px rgba(255,0,127,0.4);
+    box-shadow: 0 15px 35px rgba(255, 64, 129, 0.25), 0 5px 15px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -49,14 +51,14 @@ game_html = """
     position: relative;
     overflow: hidden;
   }
+  /* Họa tiết trang trí vui nhộn */
   .game-wrapper::before {
-    content: '';
+    content: '🎨 ✨ 🧩 🌟';
     position: absolute;
-    top: -50px; right: -50px;
-    width: 120px; height: 120px;
-    background: radial-gradient(circle, rgba(0,242,254,0.3), transparent);
-    border-radius: 50%;
-    z-index: 0;
+    top: 10px; left: 15px;
+    font-size: 16px;
+    opacity: 0.6;
+    letter-spacing: 5px;
   }
   .screen {
     display: flex;
@@ -66,9 +68,26 @@ game_html = """
     text-align: center;
     position: relative;
     z-index: 1;
+    margin-top: 10px;
   }
-  h1 { font-size: 24px; color: #00f2fe; margin-bottom: 12px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-  p { font-size: 14px; color: #cfd8dc; margin-bottom: 18px; line-height: 1.6; text-align: left; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; border-left: 4px solid #00f2fe;}
+  h1 { 
+    font-family: 'Fredoka One', cursive;
+    font-size: 26px; 
+    color: #d81b60; 
+    margin-bottom: 12px; 
+    text-shadow: 2px 2px 0px #ffe0b2;
+  }
+  p { 
+    font-size: 14px; 
+    color: #455a64; 
+    margin-bottom: 18px; 
+    line-height: 1.6; 
+    text-align: left; 
+    padding: 14px; 
+    background: #fff3e0; 
+    border-radius: 12px; 
+    border-left: 5px solid #ffa726;
+  }
   
   .header-info {
     width: 100%;
@@ -76,50 +95,62 @@ game_html = """
     justify-content: space-between;
     align-items: center;
     margin-bottom: 12px;
-    font-size: 14px;
-    font-weight: bold;
-    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    color: #37474f;
   }
   .badge {
-    background: linear-gradient(135deg, #ff416c, #ff4b2b);
-    padding: 5px 12px;
-    border-radius: 15px;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+    background: linear-gradient(135deg, #ffb74d, #ffa726);
+    padding: 6px 14px;
+    border-radius: 20px;
+    box-shadow: 0 3px 6px rgba(255, 152, 0, 0.3);
     color: #fff;
-    font-size: 12px;
+    font-size: 13px;
+    font-family: 'Fredoka One', cursive;
   }
   
+  /* Bảng lưới Sudoku kiểu nghệ thuật */
   .sudoku-grid {
     display: grid;
-    gap: 3px;
-    background: #00f2fe;
-    padding: 4px;
-    border-radius: 8px;
+    gap: 4px;
+    background: #ab47bc;
+    padding: 6px;
+    border-radius: 12px;
     margin-bottom: 14px;
-    box-shadow: 0 8px 20px rgba(0,242,254,0.2);
+    box-shadow: 0 8px 20px rgba(171, 71, 188, 0.3);
   }
   .cell {
-    background: #1a1a2e;
-    border: none;
+    background: #fff;
+    border: 2px solid #e1bee7;
     text-align: center;
+    font-family: 'Fredoka One', cursive;
     font-weight: bold;
-    color: #00f2fe;
-    border-radius: 4px;
+    color: #7b1fa2;
+    border-radius: 8px;
     outline: none;
     transition: 0.2s;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
   }
   .cell:focus {
-    background: #16213e;
-    color: #fff;
-    box-shadow: inset 0 0 8px #00f2fe;
+    background: #f3e5f5;
+    border-color: #ab47bc;
+    transform: scale(1.05);
   }
   .cell.fixed {
-    background: #0f172a;
-    color: #94a3b8;
+    background: #fce4ec;
+    color: #c2185b;
+    border-color: #f8bbd0;
   }
   .cell.error {
-    background: #ff416c !important;
-    color: #fff;
+    background: #ff5252 !important;
+    color: #fff !important;
+    animation: shake 0.3s ease;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
   }
 
   .controls {
@@ -130,35 +161,35 @@ game_html = """
     margin-top: 10px;
   }
   button {
-    background: linear-gradient(135deg, #00c6ff, #0072ff);
+    font-family: 'Fredoka One', cursive;
+    background: linear-gradient(135deg, #26a69a, #00897b);
     color: #fff;
     border: none;
-    padding: 9px 16px;
-    font-size: 13px;
-    font-weight: bold;
-    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 14px;
+    border-radius: 12px;
     cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,114,255,0.4);
+    box-shadow: 0 4px 10px rgba(38, 166, 154, 0.4);
     transition: 0.15s;
   }
   button:hover {
     filter: brightness(1.1);
+    transform: translateY(-2px);
   }
   button:active {
-    transform: translateY(2px);
-    box-shadow: 0 2px 5px rgba(0,114,255,0.4);
+    transform: translateY(1px);
   }
-  button.hint-btn { background: linear-gradient(135deg, #f7971e, #ffd200); color: #000; box-shadow: 0 4px 10px rgba(247,151,30,0.4); }
-  button.next-btn { background: linear-gradient(135deg, #11998e, #38ef7d); box-shadow: 0 4px 10px rgba(56,239,125,0.4); }
-  button.start-btn { background: linear-gradient(135deg, #ff416c, #ff4b2b); font-size: 16px; padding: 12px 30px; margin-top: 10px; box-shadow: 0 6px 15px rgba(255,65,108,0.5); }
+  button.hint-btn { background: linear-gradient(135deg, #ffa726, #fb8c00); box-shadow: 0 4px 10px rgba(255, 167, 38, 0.4); }
+  button.next-btn { background: linear-gradient(135deg, #66bb6a, #43a047); box-shadow: 0 4px 10px rgba(102, 187, 106, 0.4); }
+  button.start-btn { background: linear-gradient(135deg, #ec407a, #d81b60); font-size: 18px; padding: 12px 32px; margin-top: 10px; box-shadow: 0 6px 15px rgba(236, 64, 122, 0.5); }
 
   .status-msg {
     margin-top: 10px;
-    font-size: 14px;
-    font-weight: bold;
-    height: 22px;
+    font-size: 15px;
+    font-weight: 700;
+    height: 24px;
     text-align: center;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    color: #6a1b9a;
   }
 </style>
 </head>
@@ -166,31 +197,33 @@ game_html = """
 
 <div class="game-wrapper">
 
+  <!-- MÀN HÌNH HƯỚNG DẪN -->
   <div id="tutorial-screen" class="screen">
-    <h1>🔢 SUDOKU MASTER DELUXE</h1>
+    <h1>🎨 ARTISTIC SUDOKU</h1>
     <p>
-      ✨ <b>Mục tiêu:</b> Điền số hợp lệ vào ô trống.<br>
-      ✨ <b>Quy tắc:</b> Hàng ngang, cột dọc & vùng lưới nhỏ không trùng số.<br>
-      ✨ <b>Trợ giúp:</b> Bạn có tối đa <b>3 lượt gợi ý (💡)</b> mỗi màn.<br>
-      ✨ <b>Thử thách:</b> 5 cấp độ từ 5x5 đến 9x9 cực kỳ lôi cuốn!
+      🌟 <b>Mục tiêu:</b> Điền các con số nghệ thuật vào ô trống.<br>
+      🌟 <b>Quy tắc:</b> Hàng ngang, cột dọc & khối vuông không trùng số.<br>
+      🌟 <b>Trợ giúp:</b> Bạn có tối đa <b>3 lượt gợi ý (💡)</b> mỗi màn.<br>
+      🌟 <b>Thử thách:</b> Trải nghiệm 5 cấp độ sinh động từ 5x5 đến 9x9!
     </p>
-    <button class="btn start-btn" onclick="startTheGame()">🚀 BẮT ĐẦU CHƠI</button>
+    <button class="btn start-btn" onclick="startTheGame()">🚀 BẮT ĐẦU KHÁM PHÁ</button>
   </div>
 
+  <!-- MÀN HÌNH CHƠI GAME -->
   <div id="game-screen" class="screen" style="display: none;">
     <div class="header-info">
-      <span id="levelTitle" style="color: #00f2fe; font-size: 16px;">MÀN 1 (5x5)</span>
+      <span id="levelTitle" style="color: #8e24aa; font-size: 16px; font-family: 'Fredoka One', cursive;">MÀN 1 (5x5)</span>
       <div class="badge" id="hintBadge">💡 Gợi ý: 3</div>
     </div>
 
     <div class="sudoku-grid" id="board"></div>
 
-    <div class="status-msg" id="statusText">Hãy điền các số thích hợp vào ô trống!</div>
+    <div class="status-msg" id="statusText">Hãy điền các con số thật khéo léo nhé!</div>
 
     <div class="controls">
       <button onclick="useHint()" class="hint-btn" id="hintBtn">💡 Gợi ý (3)</button>
       <button onclick="checkAnswer()">Kiểm tra</button>
-      <button onclick="resetLevel()" style="background: linear-gradient(135deg, #cb2d3e, #ef473a);">Làm lại</button>
+      <button onclick="resetLevel()" style="background: linear-gradient(135deg, #ef5350, #e53935);">Làm lại</button>
       <button onclick="nextLevel()" class="next-btn" id="nextBtn" style="display:none;">Màn tiếp ➡</button>
     </div>
   </div>
@@ -210,35 +243,34 @@ function initAudio() {
   }
 }
 
+// Nhạc nền phong cách vui tươi, lôi cuốn (Inspirational & Playful Chords)
 function startBgMusic() {
   if (bgMusicInterval) return;
-  const chordProgression = [
-    [261.63, 329.63, 392.00],
-    [349.23, 440.00, 523.25],
-    [392.00, 493.88, 587.33],
-    [440.00, 523.25, 659.25]
+  const cheerfulMelody = [
+    329.63, 392.00, 440.00, 523.25, // E4, G4, A4, C5
+    392.00, 440.00, 523.25, 659.25  // G4, A4, C5, E5
   ];
   let step = 0;
   bgMusicInterval = setInterval(() => {
     try {
       if(!audioCtx) return;
-      let chord = chordProgression[Math.floor(step / 2) % chordProgression.length];
-      let freq = chord[step % chord.length];
+      let freq = cheerfulMelody[step % cheerfulMelody.length];
       
       let osc = audioCtx.createOscillator();
       let gain = audioCtx.createGain();
-      osc.type = 'triangle';
+      osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.35);
+      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
       osc.connect(gain); gain.connect(audioCtx.destination);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.35);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.3);
       
       step++;
     } catch(e){}
-  }, 500);
+  }, 400);
 }
 
+// Hệ thống âm thanh sống động, vui nhộn
 function playSound(type) {
   initAudio();
   try {
@@ -246,23 +278,23 @@ function playSound(type) {
     let gain = audioCtx.createGain();
     
     if (type === 'correct') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15);
-      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(659.25, audioCtx.currentTime); // E5
+      osc.frequency.exponentialRampToValueAtTime(1046.50, audioCtx.currentTime + 0.15); // C6
+      gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
       osc.connect(gain); gain.connect(audioCtx.destination);
       osc.start(); osc.stop(audioCtx.currentTime + 0.2);
     } else if (type === 'wrong') {
       osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.25);
+      osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(90, audioCtx.currentTime + 0.25);
       gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
       osc.connect(gain); gain.connect(audioCtx.destination);
       osc.start(); osc.stop(audioCtx.currentTime + 0.25);
     } else if (type === 'win') {
-      const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+      const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98];
       notes.forEach((f, i) => {
         setTimeout(() => {
           let o = audioCtx.createOscillator();
@@ -272,10 +304,10 @@ function playSound(type) {
           g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
           o.connect(g); g.connect(audioCtx.destination);
           o.start(); o.stop(audioCtx.currentTime + 0.4);
-        }, i * 100);
+        }, i * 90);
       });
     } else if (type === 'lose') {
-      const notes = [350, 280, 220, 150];
+      const notes = [330, 277, 220, 164];
       notes.forEach((f, i) => {
         setTimeout(() => {
           let o = audioCtx.createOscillator();
@@ -285,7 +317,7 @@ function playSound(type) {
           g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
           o.connect(g); g.connect(audioCtx.destination);
           o.start(); o.stop(audioCtx.currentTime + 0.3);
-        }, i * 120);
+        }, i * 110);
       });
     }
   } catch(e) {}
@@ -365,12 +397,12 @@ function loadLevel(lvlIdx) {
   document.getElementById('hintBadge').innerText = `💡 Gợi ý: ${hintsLeft}`;
   document.getElementById('hintBtn').innerText = `💡 Gợi ý (${hintsLeft})`;
   document.getElementById('nextBtn').style.display = 'none';
-  document.getElementById('statusText').style.color = '#fff';
+  document.getElementById('statusText').style.color = '#7b1fa2';
   document.getElementById('statusText').innerText = 'Hãy điền các số thích hợp vào ô trống!';
 
   const board = document.getElementById('board');
-  board.style.gridTemplateColumns = `repeat(${lvl.size}, ${lvl.size === 5 ? 56 : 38}px)`;
-  board.style.gridTemplateRows = `repeat(${lvl.size}, ${lvl.size === 5 ? 56 : 38}px)`;
+  board.style.gridTemplateColumns = `repeat(${lvl.size}, ${lvl.size === 5 ? 58 : 38}px)`;
+  board.style.gridTemplateRows = `repeat(${lvl.size}, ${lvl.size === 5 ? 58 : 38}px)`;
   board.innerHTML = '';
 
   let totalCells = lvl.size * lvl.size;
@@ -380,9 +412,9 @@ function loadLevel(lvlIdx) {
     input.min = 1;
     input.max = lvl.size;
     input.className = 'cell';
-    input.style.width = lvl.size === 5 ? '56px' : '38px';
-    input.style.height = lvl.size === 5 ? '56px' : '38px';
-    input.style.fontSize = lvl.size === 5 ? '22px' : '16px';
+    input.style.width = lvl.size === 5 ? '58px' : '38px';
+    input.style.height = lvl.size === 5 ? '58px' : '38px';
+    input.style.fontSize = lvl.size === 5 ? '24px' : '16px';
 
     let val = lvl.puzzle[i];
     if (val !== 0) {
@@ -408,7 +440,7 @@ function loadLevel(lvlIdx) {
 function useHint() {
   if (isWon) return;
   if (hintsLeft <= 0) {
-    document.getElementById('statusText').style.color = '#ff9800';
+    document.getElementById('statusText').style.color = '#e65100';
     document.getElementById('statusText').innerText = '⚠️ Bạn đã dùng hết lượt gợi ý!';
     return;
   }
@@ -426,12 +458,12 @@ function useHint() {
   if (emptyIndices.length > 0) {
     let randIdx = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
     inputs[randIdx].value = lvl.solution[randIdx];
-    inputs[randIdx].style.color = '#38ef7d';
+    inputs[randIdx].style.color = '#2e7d32';
     hintsLeft--;
     document.getElementById('hintBadge').innerText = `💡 Gợi ý: ${hintsLeft}`;
     document.getElementById('hintBtn').innerText = `💡 Gợi ý (${hintsLeft})`;
     playSound('correct');
-    document.getElementById('statusText').style.color = '#00f2fe';
+    document.getElementById('statusText').style.color = '#00897b';
     document.getElementById('statusText').innerText = '💡 Đã điền giúp bạn 1 ô đúng!';
   } else {
     document.getElementById('statusText').innerText = '✨ Các ô trống hiện tại đều đã đúng!';
@@ -457,7 +489,7 @@ function checkAnswer() {
   if (isAllCorrect) {
     isWon = true;
     playSound('win');
-    document.getElementById('statusText').style.color = '#38ef7d';
+    document.getElementById('statusText').style.color = '#2e7d32';
     document.getElementById('statusText').innerText = '🎉 Chúc mừng! Bạn đã hoàn thành xuất sắc màn này!';
     
     if (currentLevel < levels.length - 1) {
@@ -467,8 +499,8 @@ function checkAnswer() {
     }
   } else {
     playSound('lose');
-    document.getElementById('statusText').style.color = '#ff416c';
-    document.getElementById('statusText').innerText = '❌ Có số điền chưa chính xác (ô màu hồng)!';
+    document.getElementById('statusText').style.color = '#d32f2f';
+    document.getElementById('statusText'].innerText = '❌ Có số điền chưa chính xác (ô màu đỏ)!';
   }
 }
 
