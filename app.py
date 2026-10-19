@@ -108,6 +108,28 @@ game_html = """
     font-family: 'Fredoka One', cursive;
   }
   
+  /* Khung hiển thị thú cưng thưởng combo */
+  .pet-popup {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #e1bee7, #ede7f6);
+    border: 2px dashed #ab47bc;
+    border-radius: 12px;
+    padding: 8px 15px;
+    margin-bottom: 10px;
+    animation: bounce 0.5s infinite alternate;
+    width: 100%;
+    box-shadow: 0 4px 10px rgba(171, 71, 188, 0.2);
+  }
+  .pet-emoji { font-size: 28px; margin-right: 10px; }
+  .pet-text { font-family: 'Fredoka One', cursive; font-size: 14px; color: #6a1b9a; text-align: left; }
+
+  @keyframes bounce {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-4px); }
+  }
+
   .sudoku-grid {
     display: grid;
     gap: 4px;
@@ -188,8 +210,8 @@ game_html = """
     <p>
       🌟 <b>Mục tiêu:</b> Điền các con số nghệ thuật vào ô trống.<br>
       🌟 <b>Quy tắc:</b> Hàng ngang, cột dọc & khối vuông không trùng số.<br>
-      🌟 <b>Trợ giúp:</b> Bạn có tối đa <b>3 lượt gợi ý (💡)</b> mỗi màn.<br>
-      🌟 <b>Thử thách:</b> Trải nghiệm 5 cấp độ sinh động từ 5x5 đến 9x9!
+      🌟 <b>Thú cưng cổ vũ:</b> Nhập đúng liên tiếp từ <b>3 số trở lên</b>, các bạn thú nhỏ sẽ xuất hiện chúc mừng!<br>
+      🌟 <b>Trợ giúp:</b> Tối đa <b>3 lượt gợi ý (💡)</b> mỗi màn.
     </p>
     <button class="btn start-btn" onclick="startTheGame()">🚀 BẮT ĐẦU KHÁM PHÁ</button>
   </div>
@@ -199,6 +221,12 @@ game_html = """
     <div class="header-info">
       <span id="levelTitle" style="color: #8e24aa; font-size: 16px; font-family: 'Fredoka One', cursive;">MÀN 1 (5x5)</span>
       <div class="badge" id="hintBadge">💡 Gợi ý: 3</div>
+    </div>
+
+    <!-- KHUNG HIỆN THỊ THÚ CƯNG KHI COMBO >= 3 -->
+    <div id="petPopup" class="pet-popup">
+      <div class="pet-emoji" id="petEmoji">🐰</div>
+      <div class="pet-text" id="petText">Thỏ con nói: Hoan hô, bạn giỏi thật!</div>
     </div>
 
     <div class="sudoku-grid" id="board"></div>
@@ -218,6 +246,14 @@ game_html = """
 <script>
 let audioCtx = null;
 let bgMusicInterval = null;
+let correctStreak = 0; // Đếm số lần đúng liên tiếp
+
+const pets = [
+  { emoji: "🐰", name: "Thỏ con", msgs: ["Hoan hô, bạn giỏi thật!", "Tuyệt vời quá đi!", "Siêu sao Sudoku đây rồi!"] },
+  { emoji: "🐱", name: "Mèo ú", msgs: ["Meow~ Bạn làm tốt lắm!", "Chuẩn không cần chỉnh!", "Xuất sắc nha!"] },
+  { emoji: "🐶", name: "Cún con", msgs: ["Gâu gâu! Giỏi quá bạn ơi!", "Tuyệt đỉnh công phu!", "Cố lên, sắp thắng rồi!"] },
+  { emoji: "🦊", name: "Cáo nhỏ", msgs: ["Thông minh quá đi mất!", "Đỉnh chóp luôn!", "Cực kỳ xuất sắc!"] }
+];
 
 function initAudio() {
   try {
@@ -267,6 +303,20 @@ function playSound(type) {
       gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
       osc.connect(gain); gain.connect(audioCtx.destination);
       osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+    } else if (type === 'streak') {
+      // Âm thanh thưởng combo đặc biệt tưng bừng hơn
+      const notes = [523.25, 659.25, 783.99, 1046.50];
+      notes.forEach((f, i) => {
+        setTimeout(() => {
+          let o = audioCtx.createOscillator();
+          let g = audioCtx.createGain();
+          o.type = 'sine'; o.frequency.setValueAtTime(f, audioCtx.currentTime);
+          g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.25);
+          o.connect(g); g.connect(audioCtx.destination);
+          o.start(); o.stop(audioCtx.currentTime + 0.25);
+        }, i * 70);
+      });
     } else if (type === 'wrong') {
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(180, audioCtx.currentTime);
@@ -373,6 +423,8 @@ function loadLevel(lvlIdx) {
   currentLevel = lvlIdx;
   hintsLeft = 3;
   isWon = false;
+  correctStreak = 0;
+  hidePetPopup();
   
   let lvl = levels[currentLevel];
   document.getElementById('levelTitle').innerText = `MÀN ${currentLevel + 1} (${lvl.size}x${lvl.size})`;
@@ -408,15 +460,41 @@ function loadLevel(lvlIdx) {
         let v = parseInt(e.target.value);
         if (v >= 1 && v <= lvl.size) {
           if (v === lvl.solution[i]) {
-            playSound('correct');
+            correctStreak++;
+            if (correctStreak >= 3) {
+              triggerPetCheer();
+            } else {
+              playSound('correct');
+            }
           } else {
+            correctStreak = 0;
+            hidePetPopup();
             playSound('wrong');
           }
+        } else {
+          correctStreak = 0;
+          hidePetPopup();
         }
       };
     }
     board.appendChild(input);
   }
+}
+
+function triggerPetCheer() {
+  playSound('streak');
+  let randomPet = pets[Math.floor(Math.random() * pets.length)];
+  let randomMsg = randomPet.msgs[Math.floor(Math.random() * randomPet.msgs.length)];
+
+  document.getElementById('petEmoji').innerText = randomPet.emoji;
+  document.getElementById('petText').innerHTML = `<b>${randomPet.name}:</b> ${randomMsg} (Combo ${correctStreak} liên tiếp! 🔥)`;
+  
+  let popup = document.getElementById('petPopup');
+  popup.style.display = 'flex';
+}
+
+function hidePetPopup() {
+  document.getElementById('petPopup').style.display = 'none';
 }
 
 function useHint() {
@@ -470,6 +548,7 @@ function checkAnswer() {
 
   if (isAllCorrect) {
     isWon = true;
+    hidePetPopup();
     playSound('win');
     document.getElementById('statusText').style.color = '#2e7d32';
     document.getElementById('statusText').innerText = '🎉 Chúc mừng! Bạn đã hoàn thành xuất sắc màn này!';
@@ -500,4 +579,4 @@ function nextLevel() {
 </html>
 """
 
-components.html(game_html, height=620)
+components.html(game_html, height=660)
