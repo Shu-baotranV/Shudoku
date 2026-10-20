@@ -10,7 +10,7 @@ st.set_page_config(
 st.markdown("""
 <style>
     .block-container {
-        padding-top: 0.5rem;
+        padding-top: 0.2rem;
         padding-bottom: 0rem;
     }
 </style>
@@ -38,15 +38,15 @@ game_html = """
     color: #333;
   }
   .game-wrapper {
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.96);
     border: 4px solid #ff4081;
-    border-radius: 20px;
-    padding: 20px;
-    box-shadow: 0 15px 35px rgba(255, 64, 129, 0.25), 0 5px 15px rgba(0,0,0,0.1);
+    border-radius: 24px;
+    padding: 25px;
+    box-shadow: 0 15px 40px rgba(255, 64, 129, 0.3), 0 5px 15px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
     align-items: center;
-    max-width: 440px;
+    max-width: 540px;
     width: 100%;
     position: relative;
     overflow: hidden;
@@ -54,10 +54,10 @@ game_html = """
   .game-wrapper::before {
     content: '🎨 ✨ 🧩 🌟';
     position: absolute;
-    top: 10px; left: 15px;
-    font-size: 16px;
+    top: 12px; left: 20px;
+    font-size: 18px;
     opacity: 0.6;
-    letter-spacing: 5px;
+    letter-spacing: 6px;
   }
   .screen {
     display: flex;
@@ -71,21 +71,21 @@ game_html = """
   }
   h1 { 
     font-family: 'Fredoka One', cursive;
-    font-size: 26px; 
+    font-size: 30px; 
     color: #d81b60; 
-    margin-bottom: 12px; 
+    margin-bottom: 14px; 
     text-shadow: 2px 2px 0px #ffe0b2;
   }
   p { 
-    font-size: 14px; 
+    font-size: 15px; 
     color: #455a64; 
-    margin-bottom: 18px; 
+    margin-bottom: 20px; 
     line-height: 1.6; 
     text-align: left; 
-    padding: 14px; 
+    padding: 16px; 
     background: #fff3e0; 
-    border-radius: 12px; 
-    border-left: 5px solid #ffa726;
+    border-radius: 14px; 
+    border-left: 6px solid #ffa726;
   }
   
   .header-info {
@@ -93,51 +93,51 @@ game_html = """
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
-    font-size: 15px;
+    margin-bottom: 14px;
+    font-size: 16px;
     font-weight: 700;
     color: #37474f;
   }
   .badge {
     background: linear-gradient(135deg, #ffb74d, #ffa726);
-    padding: 6px 14px;
-    border-radius: 20px;
+    padding: 8px 16px;
+    border-radius: 22px;
     box-shadow: 0 3px 6px rgba(255, 152, 0, 0.3);
     color: #fff;
-    font-size: 13px;
+    font-size: 14px;
     font-family: 'Fredoka One', cursive;
   }
   
-  /* Khung hiển thị thú cưng thưởng combo */
+  /* Khung hiển thị thú cưng thưởng combo lớn hơn */
   .pet-popup {
     display: none;
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, #e1bee7, #ede7f6);
     border: 2px dashed #ab47bc;
-    border-radius: 12px;
-    padding: 8px 15px;
-    margin-bottom: 10px;
+    border-radius: 14px;
+    padding: 10px 18px;
+    margin-bottom: 12px;
     animation: bounce 0.5s infinite alternate;
     width: 100%;
-    box-shadow: 0 4px 10px rgba(171, 71, 188, 0.2);
+    box-shadow: 0 4px 12px rgba(171, 71, 188, 0.25);
   }
-  .pet-emoji { font-size: 28px; margin-right: 10px; }
-  .pet-text { font-family: 'Fredoka One', cursive; font-size: 14px; color: #6a1b9a; text-align: left; }
+  .pet-emoji { font-size: 32px; margin-right: 12px; }
+  .pet-text { font-family: 'Fredoka One', cursive; font-size: 15px; color: #6a1b9a; text-align: left; }
 
   @keyframes bounce {
     0% { transform: translateY(0); }
-    100% { transform: translateY(-4px); }
+    100% { transform: translateY(-5px); }
   }
 
   .sudoku-grid {
     display: grid;
-    gap: 4px;
+    gap: 5px;
     background: #ab47bc;
-    padding: 6px;
-    border-radius: 12px;
-    margin-bottom: 14px;
-    box-shadow: 0 8px 20px rgba(171, 71, 188, 0.3);
+    padding: 8px;
+    border-radius: 14px;
+    margin-bottom: 16px;
+    box-shadow: 0 10px 25px rgba(171, 71, 188, 0.35);
   }
   .cell {
     background: #fff;
@@ -146,7 +146,7 @@ game_html = """
     font-family: 'Fredoka One', cursive;
     font-weight: bold;
     color: #7b1fa2;
-    border-radius: 8px;
+    border-radius: 10px;
     outline: none;
     transition: 0.2s;
   }
@@ -167,34 +167,34 @@ game_html = """
 
   .controls {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     flex-wrap: wrap;
     justify-content: center;
-    margin-top: 10px;
+    margin-top: 12px;
   }
   button {
     font-family: 'Fredoka One', cursive;
     background: linear-gradient(135deg, #26a69a, #00897b);
     color: #fff;
     border: none;
-    padding: 10px 18px;
-    font-size: 14px;
-    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 15px;
+    border-radius: 14px;
     cursor: pointer;
-    box-shadow: 0 4px 10px rgba(38, 166, 154, 0.4);
+    box-shadow: 0 4px 12px rgba(38, 166, 154, 0.4);
     transition: 0.15s;
   }
   button:hover { filter: brightness(1.1); transform: translateY(-2px); }
   button:active { transform: translateY(1px); }
-  button.hint-btn { background: linear-gradient(135deg, #ffa726, #fb8c00); box-shadow: 0 4px 10px rgba(255, 167, 38, 0.4); }
-  button.next-btn { background: linear-gradient(135deg, #66bb6a, #43a047); box-shadow: 0 4px 10px rgba(102, 187, 106, 0.4); }
-  button.start-btn { background: linear-gradient(135deg, #ec407a, #d81b60); font-size: 18px; padding: 12px 32px; margin-top: 10px; box-shadow: 0 6px 15px rgba(236, 64, 122, 0.5); }
+  button.hint-btn { background: linear-gradient(135deg, #ffa726, #fb8c00); box-shadow: 0 4px 12px rgba(255, 167, 38, 0.4); }
+  button.next-btn { background: linear-gradient(135deg, #66bb6a, #43a047); box-shadow: 0 4px 12px rgba(102, 187, 106, 0.4); }
+  button.start-btn { background: linear-gradient(135deg, #ec407a, #d81b60); font-size: 20px; padding: 14px 36px; margin-top: 12px; box-shadow: 0 6px 18px rgba(236, 64, 122, 0.5); }
 
   .status-msg {
-    margin-top: 10px;
-    font-size: 15px;
+    margin-top: 12px;
+    font-size: 16px;
     font-weight: 700;
-    height: 24px;
+    height: 26px;
     text-align: center;
     color: #6a1b9a;
   }
@@ -219,7 +219,7 @@ game_html = """
   <!-- MÀN HÌNH CHƠI GAME -->
   <div id="game-screen" class="screen" style="display: none;">
     <div class="header-info">
-      <span id="levelTitle" style="color: #8e24aa; font-size: 16px; font-family: 'Fredoka One', cursive;">MÀN 1 (5x5)</span>
+      <span id="levelTitle" style="color: #8e24aa; font-size: 18px; font-family: 'Fredoka One', cursive;">MÀN 1 (5x5)</span>
       <div class="badge" id="hintBadge">💡 Gợi ý: 3</div>
     </div>
 
@@ -246,7 +246,7 @@ game_html = """
 <script>
 let audioCtx = null;
 let bgMusicInterval = null;
-let correctStreak = 0; // Đếm số lần đúng liên tiếp
+let correctStreak = 0;
 
 const pets = [
   { emoji: "🐰", name: "Thỏ con", msgs: ["Hoan hô, bạn giỏi thật!", "Tuyệt vời quá đi!", "Siêu sao Sudoku đây rồi!"] },
@@ -279,10 +279,11 @@ function startBgMusic() {
       let gain = audioCtx.createGain();
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
+      // Đã tăng âm lượng nhạc nền to hơn trước (0.03 lên 0.08)
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.35);
       osc.connect(gain); gain.connect(audioCtx.destination);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.35);
       
       step++;
     } catch(e){}
@@ -304,7 +305,6 @@ function playSound(type) {
       osc.connect(gain); gain.connect(audioCtx.destination);
       osc.start(); osc.stop(audioCtx.currentTime + 0.2);
     } else if (type === 'streak') {
-      // Âm thanh thưởng combo đặc biệt tưng bừng hơn
       const notes = [523.25, 659.25, 783.99, 1046.50];
       notes.forEach((f, i) => {
         setTimeout(() => {
@@ -435,8 +435,10 @@ function loadLevel(lvlIdx) {
   document.getElementById('statusText').innerText = 'Hãy điền các số thích hợp vào ô trống!';
 
   const board = document.getElementById('board');
-  board.style.gridTemplateColumns = `repeat(${lvl.size}, ${lvl.size === 5 ? 58 : 38}px)`;
-  board.style.gridTemplateRows = `repeat(${lvl.size}, ${lvl.size === 5 ? 58 : 38}px)`;
+  // Mở rộng kích thước ô số to rõ hơn (5x5: 68px, 9x9: 44px)
+  let cellSize = lvl.size === 5 ? 68 : 44;
+  board.style.gridTemplateColumns = `repeat(${lvl.size}, ${cellSize}px)`;
+  board.style.gridTemplateRows = `repeat(${lvl.size}, ${cellSize}px)`;
   board.innerHTML = '';
 
   let totalCells = lvl.size * lvl.size;
@@ -446,9 +448,9 @@ function loadLevel(lvlIdx) {
     input.min = 1;
     input.max = lvl.size;
     input.className = 'cell';
-    input.style.width = lvl.size === 5 ? '58px' : '38px';
-    input.style.height = lvl.size === 5 ? '58px' : '38px';
-    input.style.fontSize = lvl.size === 5 ? '24px' : '16px';
+    input.style.width = cellSize + 'px';
+    input.style.height = cellSize + 'px';
+    input.style.fontSize = lvl.size === 5 ? '28px' : '18px';
 
     let val = lvl.puzzle[i];
     if (val !== 0) {
@@ -579,4 +581,4 @@ function nextLevel() {
 </html>
 """
 
-components.html(game_html, height=660)
+components.html(game_html, height=720)
